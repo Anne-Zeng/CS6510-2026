@@ -22,12 +22,6 @@ import java.util.regex.Pattern;
  * built-in com.sun.net.httpserver - no external dependencies, matching the
  * load client's zero-dependency design.
  *
- * THIS IS NOT ONE OF THE WEEKLY ARCHITECTURE IMPLEMENTATIONS. It exists so
- * that (a) this project's own load client can be validated end-to-end
- * before any student code exists, and (b) students have a known-good
- * reference to compare their own week's server against while debugging.
- * It deliberately has no interesting architecture of its own: a handful of
- * ConcurrentHashMaps behind an HTTP server.
  *
  * Run: java --source 21 MockServer.java [port] [catalogSize] [stockPerItem] [lowStockThreshold]
  * Defaults: port=8080 catalogSize=2000 stockPerItem=10000 lowStockThreshold=50
