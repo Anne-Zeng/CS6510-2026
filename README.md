@@ -150,3 +150,5 @@ rubric addition for each architecture week is to have students submit their
   the same hardware?
 - Does the popular-items ranking stay stable across implementations (it
   should — it's testing the analytics feature, not the architecture)?
+
+
