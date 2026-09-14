@@ -138,16 +138,14 @@ Suggested correctness check for grading, independent of any performancenumber: *
 
 
 
-## Suggested grading signal per week
+## Grading - things to look for
 
-Since the client writes a timestamped JSON report every run, a simple
-rubric addition for each architecture week is to have students submit their
-`reports/report-*.json` alongside their code, and compare:
+Submit the timestamped JSON report for each architecture in a 
+`reports/report-*.json` directory alongside your code, and compare:
 
-- Did the correctness invariant above hold under the default 10-station
-  load, and under a 100+ station stress run?
+- Does the system complete runs under normal and stress mode workloads. How do latencies compare?
 - How do p95/p99 latencies move relative to the previous week's numbers on
-  the same hardware?
+  the same hardware? 
 - Does the popular-items ranking stay stable across implementations (it
   should — it's testing the analytics feature, not the architecture)?
 
