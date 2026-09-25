@@ -1,0 +1,11 @@
+target/
+.DS_Store
+.idea/
+*.iml
+.vscode/
+# Server logs from benchmark runs; the JSON reports themselves are committed.
+reports/**/*.log
+
+# Python test caches
+__pycache__/
+*.pyc

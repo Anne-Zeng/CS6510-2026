@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "concurrentStations": 100,
+  "receiptsChecked": 100,
+  "scanResponsesChecked": 1500,
+  "exactWindowsRecoveredAfterRestart": [
+    500,
+    1000,
+    1500
+  ],
+  "rankingMismatches": 0,
+  "publicationFailureRecovered": true,
+  "atomicScanRollbackVerified": true,
+  "restartRankingPreserved": true,
+  "inventoryMismatches": 0,
+  "completedTransactions": 101
+}

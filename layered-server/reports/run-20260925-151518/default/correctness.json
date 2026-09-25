@@ -1,0 +1,23 @@
+{
+  "verifiedAt": "2026-09-25T22:16:37.306040+00:00",
+  "report": "report-20260925-151627.json",
+  "database": "layered_acceptance",
+  "passed": true,
+  "catalogItems": 2000,
+  "inventoryRowsChecked": 2000,
+  "initialStockPerSku": 1000000,
+  "startedTransactions": 8775,
+  "completedTransactions": 8775,
+  "unitsScanned": 93017,
+  "requestErrors": 0,
+  "totalCompletedAmount": "240622.68",
+  "basketMismatches": 0,
+  "priceMismatches": 0,
+  "scanEvents": 93017,
+  "expectedWindows": 186,
+  "rankingMismatches": [],
+  "windowsPublished": 186,
+  "latestWindowEnd": 93000,
+  "inventoryMismatches": [],
+  "failures": []
+}
