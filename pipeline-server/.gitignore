@@ -1,0 +1,18 @@
+target/
+.DS_Store
+.idea/
+*.iml
+.vscode/
+# Server logs from benchmark runs; the JSON reports themselves are committed.
+reports/**/*.log
+
+# Python test caches
+__pycache__/
+*.pyc
+
+# Keep only the selected submission reports in version control.
+reports/*
+!reports/run-20261001-025927/
+reports/run-20261001-025927/*
+!reports/run-20261001-025927/report-default.json
+!reports/run-20261001-025927/report-stress.json
