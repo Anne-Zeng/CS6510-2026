@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "totalTests": 19,
+  "suites": [
+    {
+      "name": "edu.cs6510.servicebased.analytics.AnalyticsPipelineTest",
+      "tests": "6",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    },
+    {
+      "name": "edu.cs6510.servicebased.analytics.AnalyticsServiceTest",
+      "tests": "2",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    },
+    {
+      "name": "edu.cs6510.servicebased.gateway.GatewayServerTest",
+      "tests": "11",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    }
+  ]
+}

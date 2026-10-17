@@ -1,5 +1,13 @@
 # Self-Checkout System — Semester Project
 
+## Service Based Architecture assignment
+
+The latest implementation is in [service-based-server](service-based-server/README.md).
+It defines three independently deployable domain services sharing one PostgreSQL
+database. See the [service list and submission notes](service-based-server/SUBMISSION.md)
+and the required [Default](service-based-server/reports/submission/report-default.json)
+and [Stress](service-based-server/reports/submission/report-stress.json) JSON reports.
+
 A single API contract, to be implemented by a different
 architecture style each week. Each implementation is tested every week by the **same**
 unmodified load-testing client. Because the client and the contract never

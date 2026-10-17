@@ -1,0 +1,10 @@
+# 功能：只提交源码、正式报告和验证证据，忽略编译文件、进程文件和日志。
+**/target/
+.DS_Store
+__pycache__/
+*.pyc
+reports/**/*.log
+# 功能：保留每轮原始输出供本地排查，Git 只收录已选定且通过检查的提交文件。
+reports/*
+!reports/submission/
+!reports/comparison/

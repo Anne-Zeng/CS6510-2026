@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 功能：统一管理 Java/Spring 版本；三个业务服务和网关分别打包，数据库模块只作为依赖。 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+    <groupId>edu.cs6510</groupId>
+    <artifactId>service-based-server</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Self Checkout — Service Based Architecture</name>
+    <!-- 功能：按依赖顺序构建共享库、三个业务服务和 HTTP 入口。 -->
+    <modules>
+        <module>shared-persistence</module>
+        <module>catalog-service</module>
+        <module>checkout-service</module>
+        <module>analytics-service</module>
+        <module>gateway</module>
+    </modules>
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+</project>

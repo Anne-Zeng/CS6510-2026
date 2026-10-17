@@ -1,0 +1,29 @@
+{
+  "database": "servicebased_acceptance",
+  "catalogSize": 2000,
+  "initialStockPerSku": 1000000,
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "logicalCpuCount": 8,
+  "postgresqlVersion": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.1.1.101), 64-bit",
+  "basePort": 18090,
+  "jvmOptions": [
+    "-Xms64m",
+    "-Xmx256m"
+  ],
+  "javaVersion": "java version \"22.0.1\" 2024-04-16\nJava(TM) SE Runtime Environment (build 22.0.1+8-16)\nJava HotSpot(TM) 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)",
+  "poolLimits": {
+    "catalog": 8,
+    "checkout": 16,
+    "analytics": 8
+  },
+  "workloads": {
+    "default": {
+      "stations": 10,
+      "durationSeconds": 60
+    },
+    "stress": {
+      "stations": 100,
+      "durationSeconds": 120
+    }
+  }
+}

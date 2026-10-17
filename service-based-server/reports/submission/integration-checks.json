@@ -1,0 +1,105 @@
+{
+  "verifiedAt": "2026-10-16T10:24:25.393418+00:00",
+  "database": "servicebased_acceptance_checks",
+  "passed": true,
+  "checks": [
+    {
+      "name": "routes_and_health",
+      "passed": true,
+      "durationSeconds": 0.361,
+      "independentProcesses": 4,
+      "domainRoutes": 3,
+      "errorStatusesPreserved": [
+        400,
+        404,
+        409
+      ]
+    },
+    {
+      "name": "invalid_scan_is_atomic",
+      "passed": true,
+      "durationSeconds": 0.222,
+      "basketUnchanged": true,
+      "outboxUnchanged": true
+    },
+    {
+      "name": "event_write_failure_rolls_back_basket",
+      "passed": true,
+      "durationSeconds": 0.461,
+      "failedWriteStatus": 500,
+      "basketRolledBack": true,
+      "silentlyCancelledInsertRolledBack": true,
+      "retryProducedExactlyOneOutboxEvent": true
+    },
+    {
+      "name": "inventory_completion_is_atomic",
+      "passed": true,
+      "durationSeconds": 0.393,
+      "earlySkuDebitRolledBack": true,
+      "transactionRemainedOpen": true,
+      "silentlyCancelledCompletionStatus": 500,
+      "cancelledCompletionInventoryRolledBack": true,
+      "completionRetryDebitedStockOnce": true
+    },
+    {
+      "name": "same_basket_cannot_complete_twice",
+      "passed": true,
+      "durationSeconds": 0.074,
+      "statuses": [
+        200,
+        409
+      ],
+      "stockDebitedOnce": true
+    },
+    {
+      "name": "competing_baskets_cannot_oversell",
+      "passed": true,
+      "durationSeconds": 0.126,
+      "statuses": [
+        200,
+        409
+      ],
+      "finalStock": 0
+    },
+    {
+      "name": "concurrent_scans_keep_exact_totals",
+      "passed": true,
+      "durationSeconds": 0.102,
+      "concurrentScans": 20,
+      "exactSummaryAndLineQuantity": true
+    },
+    {
+      "name": "scan_and_completion_are_serialized",
+      "passed": true,
+      "durationSeconds": 0.062,
+      "scanStatus": 409,
+      "receiptCountMatchesAcceptedScans": true
+    },
+    {
+      "name": "mixed_skus_and_reversed_baskets",
+      "passed": true,
+      "durationSeconds": 0.162,
+      "mixedSkuScans": 20,
+      "oppositeOrderCompletions": 2,
+      "exactTotalsAndStock": true
+    },
+    {
+      "name": "analytics_recovers_without_direct_calls",
+      "passed": true,
+      "durationSeconds": 28.042,
+      "scansAcceptedWhileAnalyticsOffline": 1447,
+      "outboxEvents": 1500,
+      "pendingOutboxEvents": 0,
+      "eventSourceMismatches": 0,
+      "promotionFailureRolledBack": true,
+      "exactWindowsRecovered": [
+        500,
+        1000,
+        1500
+      ],
+      "rankingMismatches": 0,
+      "restartRankingPreserved": true
+    }
+  ],
+  "failures": []
+}
