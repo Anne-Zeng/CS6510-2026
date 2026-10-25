@@ -1,0 +1,34 @@
+{
+  "default": {
+    "historicalServiceBasedReport": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/service-based-server/reports/submission/report-default.json",
+    "historicalGeneratedAt": "2026-10-23T01:16:40.145494Z",
+    "serviceBasedTps": 166.39576532645455,
+    "microservicesTps": 183.7414278303277,
+    "throughputChangePercent": 10.424341310514972,
+    "serviceBasedCompleteP95Ms": 22.260125,
+    "microservicesCompleteP95Ms": 36.484208,
+    "serviceBasedCompleteP99Ms": 54.463667,
+    "microservicesCompleteP99Ms": 74.383042,
+    "microservicesErrors": 0,
+    "auditPassed": true,
+    "userProvidedServiceBasedReference": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/microservices-server/reports/comparison/service-based-user-reference-20261016.json",
+    "userProvidedServiceBasedTps": 222.78710556423016,
+    "changeVsUserProvidedPercent": -17.526004314753973
+  },
+  "stress": {
+    "historicalServiceBasedReport": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/service-based-server/reports/submission/report-stress.json",
+    "historicalGeneratedAt": "2026-10-23T01:19:18.191831Z",
+    "serviceBasedTps": 186.4011662142599,
+    "microservicesTps": 261.68575815703423,
+    "throughputChangePercent": 40.38847689195144,
+    "serviceBasedCompleteP95Ms": 164.738834,
+    "microservicesCompleteP95Ms": 370.135792,
+    "serviceBasedCompleteP99Ms": 260.196125,
+    "microservicesCompleteP99Ms": 533.488625,
+    "microservicesErrors": 0,
+    "auditPassed": true,
+    "userProvidedServiceBasedReference": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/microservices-server/reports/comparison/service-based-user-reference-20261016.json",
+    "userProvidedServiceBasedTps": 230.14249678485896,
+    "changeVsUserProvidedPercent": 13.705969915526905
+  }
+}

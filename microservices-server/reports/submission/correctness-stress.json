@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "checks": {
+    "client_requests_have_no_errors": true,
+    "no_client_final_query_or_shutdown_warnings": true,
+    "analytics_drained": true,
+    "completed_transactions_match_client": true,
+    "all_transactions_completed": true,
+    "all_sagas_done": true,
+    "scan_events_match_client": true,
+    "basket_totals_correct": true,
+    "outbox_matches_basket_quantity": true,
+    "inventory_nonnegative_and_decrement_exact": true,
+    "confirmed_inventory_matches_completed_baskets": true,
+    "no_unfinished_inventory_reservations": true,
+    "event_id_and_payload_checksum_match": true,
+    "canonical_sequence_contiguous": true,
+    "all_due_windows_published": true,
+    "window_boundaries_correct": true,
+    "every_window_ranking_independently_recomputed": true
+  },
+  "totalScans": 330946,
+  "dueWindows": 661,
+  "clientRequestErrors": 0,
+  "analyticsCatchUpSeconds": 33.92027816688642,
+  "databaseCompletedTransactions": 31431,
+  "clientAcknowledgedTransactions": 31431
+}

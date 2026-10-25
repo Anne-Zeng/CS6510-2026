@@ -1,0 +1,37 @@
+# 功能：只提交源码、正式报告和验证证据，忽略编译文件、进程文件和日志。
+**/target/
+.DS_Store
+__pycache__/
+*.pyc
+reports/**/*.log
+# 功能：保留每轮原始输出供本地排查，Git 只收录已选定且通过检查的提交文件。
+reports/*
+!reports/submission/
+!reports/comparison/
+# 功能：本地数据库密码不进入版本管理。
+.env
+.env.*
+!.env.example
+
+# Only current evidence is included; older diagnostics remain local.
+reports/submission/*
+!reports/submission/README.md
+!reports/submission/report-default.json
+!reports/submission/report-stress.json
+!reports/submission/correctness-default.json
+!reports/submission/correctness-stress.json
+!reports/submission/database-deployment-default.json
+!reports/submission/database-deployment-stress.json
+!reports/submission/environment.json
+!reports/submission/comparison.json
+!reports/submission/validation.json
+reports/comparison/*
+!reports/comparison/service-based-user-reference-20261016.json
+
+# Earlier stage-specific validation belongs to local history.
+/checkout-service/reports/
+/analytics-service/reports/
+
+# Local profiling experiments are not submission tooling.
+/scripts/diagnostic-*-tmp.py
+/scripts/tune-pool.py

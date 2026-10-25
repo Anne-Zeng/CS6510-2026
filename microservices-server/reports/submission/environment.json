@@ -1,0 +1,66 @@
+{
+  "startedAt": "2026-10-25T00:03:46.582274-07:00",
+  "commitDelayMicros": 0,
+  "commitSiblings": 5,
+  "catalogSize": 2000,
+  "initialStockPerSku": 1000000,
+  "databaseServers": "shared",
+  "sharedBuffersPerTemporaryServer": null,
+  "jvmOptions": [
+    "-Xms64m",
+    "-Xmx256m",
+    "-XX:TieredStopAtLevel=4"
+  ],
+  "springVirtualThreads": false,
+  "poolLimits": {
+    "catalog": 8,
+    "checkout": 16,
+    "analytics": 8,
+    "inventory": 8
+  },
+  "checkoutInventoryMaxInFlight": 64,
+  "wholeSagaConcurrencyCap": null,
+  "inventoryMaxInFlight": 8,
+  "scanMode": "parallel single-statement autocommit; no application scan queue",
+  "catalogReadMode": "immutable local SKU map loaded once via Catalog API",
+  "outboxMaxBatchesPerPoll": 10,
+  "canonicalEventWrite": "atomic with inbox receipt",
+  "outboxBatchSize": 500,
+  "outboxAcknowledgementSqlPerBatch": 1,
+  "rankingWriteSqlPerWindow": 1,
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "logicalCpuCount": 8,
+  "loadAverageAtStart": [
+    6.18408203125,
+    9.1416015625,
+    9.86572265625
+  ],
+  "javaVersion": "java version \"22.0.1\" 2024-04-16\nJava(TM) SE Runtime Environment (build 22.0.1+8-16)\nJava HotSpot(TM) 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)",
+  "postgresqlVersion": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.1.1.101), 64-bit",
+  "synchronousCommit": "on",
+  "loadClientSourceSha256": {
+    "ApiClient.java": "dcf870f04b768c15a733a67e00f7385aec91b8ebb4688c52326febe910b92550",
+    "CatalogItem.java": "8a1aafa055f9e21a3428eb59064de2a31fb0a1b97547f04d3098e80d8ead86b3",
+    "Config.java": "1e5bbf39e6c4e2a856e75d81302ce67955d316112627a4f9c20f04421c34c5a0",
+    "ItemSampler.java": "53499d3aea32e6cc817474b777379418708f87a44eb0f4242d5a8d6125048515",
+    "Json.java": "05e846c03f36d6690e6fc1bb9226daad773b02b494bf86398c2bb7d5b4e81ba6",
+    "Main.java": "e8cd788d420a0f4072226147bce20616b0bd0a6bbf86193aa16175e436f244cd",
+    "Metrics.java": "9f786914be0562a24bd4fa165f8a4c13b47399989d52d8d92f8992d1162fd86c",
+    "ReportWriter.java": "d3b5c20836acedd2e0fa3b97862b7c2967c5c57aa2d1b8b4a2c36d83e08999a0",
+    "StationWorker.java": "074bf7c9394cd81f92dde80a9de2df0cd67798f1630ba069a85c1a5502491386"
+  },
+  "serviceSchemaSha256": {
+    "catalog": "de1f4c96c2229173e0528f59fc9a7e63b2198b99a90cf3b3210f7ca2bc4bf1be",
+    "checkout": "63a408f074b01ea1d8b0e1740cb78ac171e3edf262fcece6048d496e1e4de44a",
+    "analytics": "f2792859d7ebf69f0f363f70e0fd896f21238d63441b012648a3ca7cce29e96d",
+    "inventory": "27305679757ade46cc19ecd1201020e6796b1ad863f55b756624c560b1e34c2e"
+  },
+  "serviceJarSha256": {
+    "catalog": "1c07f1eae03d5387d77fdfdacbaca683c26bdb74b438d0afb10fce0c6fa495d1",
+    "checkout": "78c771a34aecf3a33126648f87c28ac7622c308e3fe0656e22efcc48c85a25b9",
+    "analytics": "c6c93334f0228831157f690704dc116a5519d79f6482ba4e416a657d453ddae0",
+    "inventory": "afbb4e64a70ab7e4a63f085574bce67212a3f59a00b7a8716c501234a14252d0"
+  },
+  "gatewayJarSha256": "e040d98ed08c8f2b70be76027619a6fde48b0735433e4d3dffd86a98d82d2a78",
+  "comparison": "Historical service-based-server/reports/submission reports; different run time and background load, one run per workload"
+}

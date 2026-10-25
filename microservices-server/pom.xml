@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 功能：统一管理 Java/Spring 版本；四个业务服务各自拥有数据库并独立打包。 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+    <groupId>edu.cs6510</groupId>
+    <artifactId>microservices-server</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Self Checkout — Microservices Architecture</name>
+    <!-- 功能：构建四个独立业务服务和 Gateway；不共享数据库访问模块。 -->
+    <modules>
+        <module>catalog-service</module>
+        <module>inventory-service</module>
+        <module>checkout-service</module>
+        <module>analytics-service</module>
+        <module>gateway</module>
+    </modules>
+    <!-- Load Mockito at test JVM startup; do not rely on dynamic self-attachment. -->
+    <build><pluginManagement><plugins><plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId>
+        <configuration><argLine>-javaagent:"${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar"</argLine></configuration>
+    </plugin></plugins></pluginManagement></build>
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+</project>

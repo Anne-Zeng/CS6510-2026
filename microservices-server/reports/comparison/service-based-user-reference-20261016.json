@@ -1,0 +1,25 @@
+{
+  "source": "User-provided service-based reports, generatedAt 2026-10-16T11:33:44.904400Z and 2026-10-16T11:36:10.034413Z; summary only, not the original report files",
+  "default": {
+    "stations": 10,
+    "durationSecondsRequested": 60,
+    "wallClockSeconds": 60.111198833,
+    "totalTransactions": 13392,
+    "transactionsPerSecond": 222.78710556423016,
+    "itemsPerSecond": 2350.2608955195446,
+    "completeP95Ms": 14.321625,
+    "completeP99Ms": 31.087125,
+    "errors": 0
+  },
+  "stress": {
+    "stations": 100,
+    "durationSecondsRequested": 120,
+    "wallClockSeconds": 120.321107083,
+    "totalTransactions": 27691,
+    "transactionsPerSecond": 230.14249678485896,
+    "itemsPerSecond": 2410.183940544652,
+    "completeP95Ms": 134.693459,
+    "completeP99Ms": 227.552208,
+    "errors": 0
+  }
+}
