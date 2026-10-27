@@ -1,8 +1,18 @@
 # Self-Checkout System — Semester Project
 
+## Event Based Architecture assignment
+
+The Kafka implementation is in [event-driven-server](event-driven-server/README.md).
+It retains Catalog, Checkout, Inventory, Analytics and Gateway, routes all business
+communication through Kafka, and preserves the original synchronous client API.
+See the [architecture diagram](event-driven-server/docs/architecture.svg),
+[submission notes](event-driven-server/SUBMISSION.md), and required
+[Default](event-driven-server/reports/submission/report-default.json) and
+[Stress](event-driven-server/reports/submission/report-stress.json) reports.
+
 ## Service Based Architecture assignment
 
-The latest implementation is in [service-based-server](service-based-server/README.md).
+The service-based implementation is in [service-based-server](service-based-server/README.md).
 It defines three independently deployable domain services sharing one PostgreSQL
 database. See the [service list and submission notes](service-based-server/SUBMISSION.md)
 and the required [Default](service-based-server/reports/submission/report-default.json)

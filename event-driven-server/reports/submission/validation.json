@@ -1,0 +1,70 @@
+{
+  "componentTests": {
+    "command": "./mvnw -q package",
+    "exitCode": 0,
+    "tests": 81,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "integration": {
+    "success": true,
+    "startedAt": "2026-10-27T05:43:21.993112+00:00",
+    "kafkaTopicPrefix": "integration_37e01cdc7c11",
+    "checks": [
+      {
+        "name": "no_outbound_http_clients",
+        "passed": true,
+        "details": {
+          "javaFilesInspected": 71,
+          "outboundHttpClients": []
+        }
+      },
+      {
+        "name": "gateway_routes_and_validation",
+        "passed": true,
+        "details": true
+      },
+      {
+        "name": "scan_is_non_debiting_and_concurrent_complete_is_idempotent",
+        "passed": true,
+        "details": {
+          "completeRequests": 12,
+          "stockDebited": 2
+        }
+      },
+      {
+        "name": "analytics_outage_durable_kafka_delivery_and_uuid_dedup",
+        "passed": true,
+        "details": {
+          "scansWhileOffline": 500,
+          "replayedEventUuids": 502,
+          "uniqueEventsAfterRestart": 503,
+          "freshEventAfterReplayWasConsumed": true,
+          "queryWindowEnd": 500
+        }
+      },
+      {
+        "name": "inventory_outage_and_checkout_restart_recover_without_false_success",
+        "passed": true,
+        "details": {
+          "unavailableHttpStatus": 504,
+          "queuedInventoryCommandRecovered": true,
+          "stockDebited": 1
+        }
+      }
+    ],
+    "temporaryDatabasesRemoved": true,
+    "audit": {
+      "transactions": 3,
+      "acceptedScans": 503,
+      "uniqueAnalyticsEvents": 503,
+      "rankingWindows": 1,
+      "stockMatchesCompletedSales": true,
+      "basketTotalsMatchLines": true,
+      "eventUuidPayloadSetsMatch": true,
+      "activeSagas": 0
+    },
+    "finishedAt": "2026-10-27T05:45:34.944114+00:00"
+  }
+}

@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="940" viewBox="0 0 1280 940" role="img" aria-labelledby="title description">
+  <title id="title">Self Checkout: five services communicating through Kafka</title>
+  <desc id="description">The original Load Client uses synchronous HTTP to Gateway. Gateway and the four business services communicate only through Kafka topics. Catalog, Checkout, Inventory and Analytics each own a separate PostgreSQL database. The shared event-messaging library runs inside services.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#52637a"/></marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #183047; }
+      .heading { font-size: 29px; font-weight: 700; }
+      .subtitle { font-size: 15px; fill: #52637a; }
+      .name { font-size: 21px; font-weight: 700; }
+      .body { font-size: 15px; }
+      .small { font-size: 13px; fill: #52637a; }
+      .mono { font-family: Consolas, Menlo, monospace; font-size: 14px; }
+      .edge { fill: none; stroke: #52637a; stroke-width: 2; marker-start: url(#arrow); marker-end: url(#arrow); }
+      .dbedge { fill: none; stroke: #52637a; stroke-width: 2; }
+      .card { fill: white; stroke: #bbc9d9; stroke-width: 1.5; }
+      .database { fill: #eff5fb; stroke: #a4b7ce; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="1280" height="940" fill="#f7f9fc"/>
+  <text x="44" y="43" class="heading">Self Checkout · Kafka Event Based Architecture</text>
+  <text x="44" y="69" class="subtitle">Five independent Java processes · Four private PostgreSQL databases · One local Kafka broker</text>
+
+  <rect x="490" y="97" width="300" height="61" rx="12" class="card"/>
+  <text x="640" y="124" text-anchor="middle" class="name">Original Load Client</text>
+  <text x="640" y="145" text-anchor="middle" class="small">Default and stress workload unchanged</text>
+  <path d="M 640 162 L 640 210" class="edge"/>
+  <rect x="655" y="173" width="271" height="22" rx="5" fill="#f7f9fc"/>
+  <text x="665" y="189" class="body">Synchronous HTTP · public API</text>
+
+  <rect x="490" y="214" width="300" height="83" rx="12" fill="#eaf1ff" stroke="#5a7eaf" stroke-width="1.8"/>
+  <text x="640" y="244" text-anchor="middle" class="name">Gateway :8080</text>
+  <text x="640" y="268" text-anchor="middle" class="body">HTTP contract → Kafka operations</text>
+  <text x="640" y="287" text-anchor="middle" class="small">Waits for business result · No database</text>
+  <path d="M 640 301 L 640 353" class="edge"/>
+  <text x="661" y="331" class="body">Kafka commands / correlated replies</text>
+
+  <rect x="44" y="357" width="1192" height="204" rx="18" fill="#fff6e8" stroke="#cc9040" stroke-width="1.8"/>
+  <text x="70" y="389" class="name">Apache Kafka · KRaft</text>
+  <text x="1210" y="387" text-anchor="end" class="small">Local single node · Replication factor 1 · Persistent volume</text>
+  <line x1="70" y1="405" x2="1210" y2="405" stroke="#dfc49f"/>
+  <text x="71" y="432" class="body" font-weight="700">Service request topics</text>
+  <text x="71" y="458" class="mono">catalog.requests    checkout.requests</text>
+  <text x="71" y="482" class="mono">inventory.requests  analytics.requests</text>
+  <text x="71" y="511" class="small">Default: 24 partitions per topic · Commands and queries</text>
+  <line x1="456" y1="423" x2="456" y2="521" stroke="#dfc49f"/>
+  <text x="477" y="432" class="body" font-weight="700">Requester reply topics</text>
+  <text x="477" y="458" class="mono">gateway.replies · catalog.replies</text>
+  <text x="477" y="482" class="mono">checkout.replies · inventory.replies</text>
+  <text x="477" y="506" class="mono">analytics.replies</text>
+  <text x="477" y="526" class="small">Correlation ID matches a waiting request · 1 partition each</text>
+  <line x1="900" y1="423" x2="900" y2="521" stroke="#dfc49f"/>
+  <text x="922" y="432" class="body" font-weight="700">Domain event topic</text>
+  <text x="922" y="458" class="mono">scans</text>
+  <text x="922" y="482" class="body">ItemScanned batches</text>
+  <text x="922" y="511" class="small">Checkout → Analytics · 1 partition</text>
+  <text x="70" y="544" class="small">All names begin with &lt;prefix&gt;. · Default prefix: selfcheckout · Delivery: at least once with application deduplication</text>
+
+  <path d="M 179 565 L 179 641" class="edge"/>
+  <path d="M 485 565 L 485 641" class="edge"/>
+  <path d="M 791 565 L 791 641" class="edge"/>
+  <path d="M 1097 565 L 1097 641" class="edge"/>
+  <rect x="64" y="578" width="230" height="41" rx="4" fill="#f7f9fc"/>
+  <rect x="370" y="578" width="230" height="41" rx="4" fill="#f7f9fc"/>
+  <rect x="676" y="578" width="230" height="41" rx="4" fill="#f7f9fc"/>
+  <rect x="982" y="578" width="230" height="41" rx="4" fill="#f7f9fc"/>
+  <text x="179" y="594" text-anchor="middle" class="small">Catalog queries / results</text>
+  <text x="485" y="594" text-anchor="middle" class="small">Commands / results</text>
+  <text x="485" y="613" text-anchor="middle" class="small">Publishes ItemScanned</text>
+  <text x="791" y="594" text-anchor="middle" class="small">Stock commands / results</text>
+  <text x="1097" y="594" text-anchor="middle" class="small">Queries / results</text>
+  <text x="1097" y="613" text-anchor="middle" class="small">Consumes ItemScanned</text>
+
+  <rect x="44" y="645" width="270" height="88" rx="12" class="card"/>
+  <text x="179" y="678" text-anchor="middle" class="name">Catalog :8081</text>
+  <text x="179" y="704" text-anchor="middle" class="body">Fixed item catalog</text>
+  <rect x="350" y="645" width="270" height="88" rx="12" class="card"/>
+  <text x="485" y="678" text-anchor="middle" class="name">Checkout :8082</text>
+  <text x="485" y="704" text-anchor="middle" class="body">Basket + durable Saga coordinator</text>
+  <rect x="656" y="645" width="270" height="88" rx="12" class="card"/>
+  <text x="791" y="678" text-anchor="middle" class="name">Inventory :8084</text>
+  <text x="791" y="704" text-anchor="middle" class="body">Atomic, idempotent stock debit</text>
+  <rect x="962" y="645" width="270" height="88" rx="12" class="card"/>
+  <text x="1097" y="678" text-anchor="middle" class="name">Analytics :8083</text>
+  <text x="1097" y="704" text-anchor="middle" class="body">Inbox + windowed rankings</text>
+
+  <path d="M 179 734 L 179 777" class="dbedge"/>
+  <path d="M 485 734 L 485 777" class="dbedge"/>
+  <path d="M 791 734 L 791 777" class="dbedge"/>
+  <path d="M 1097 734 L 1097 777" class="dbedge"/>
+
+  <path d="M 64 792 C 64 768 294 768 294 792 L 294 842 C 294 866 64 866 64 842 Z" class="database"/>
+  <path d="M 64 792 C 64 816 294 816 294 792" fill="none" stroke="#a4b7ce" stroke-width="1.5"/>
+  <text x="179" y="830" text-anchor="middle" class="mono">event_catalog_db</text>
+  <text x="179" y="851" text-anchor="middle" class="small">Products and prices</text>
+  <path d="M 370 792 C 370 768 600 768 600 792 L 600 842 C 600 866 370 866 370 842 Z" class="database"/>
+  <path d="M 370 792 C 370 816 600 816 600 792" fill="none" stroke="#a4b7ce" stroke-width="1.5"/>
+  <text x="485" y="830" text-anchor="middle" class="mono">event_checkout_db</text>
+  <text x="485" y="851" text-anchor="middle" class="small">Sagas · Outbox · Command results</text>
+  <path d="M 676 792 C 676 768 906 768 906 792 L 906 842 C 906 866 676 866 676 842 Z" class="database"/>
+  <path d="M 676 792 C 676 816 906 816 906 792" fill="none" stroke="#a4b7ce" stroke-width="1.5"/>
+  <text x="791" y="830" text-anchor="middle" class="mono">event_inventory_db</text>
+  <text x="791" y="851" text-anchor="middle" class="small">Stock · Saga reservation records</text>
+  <path d="M 982 792 C 982 768 1212 768 1212 792 L 1212 842 C 1212 866 982 866 982 842 Z" class="database"/>
+  <path d="M 982 792 C 982 816 1212 816 1212 792" fill="none" stroke="#a4b7ce" stroke-width="1.5"/>
+  <text x="1097" y="830" text-anchor="middle" class="mono">event_analytics_db</text>
+  <text x="1097" y="851" text-anchor="middle" class="small">Inbox · Canonical events · Rankings</text>
+
+  <text x="44" y="900" class="small">event-messaging = shared MessageBus / native KafkaBus library inside the five processes; it is not another service.</text>
+  <text x="44" y="923" class="small">Local HTTP health probes are diagnostic only. No direct business HTTP calls or cross-service database access.</text>
+</svg>

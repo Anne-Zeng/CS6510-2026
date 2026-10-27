@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!-- 功能：继承统一的 Java、依赖和构建版本，生成独立的商品目录服务。 -->
+    <parent>
+        <groupId>edu.cs6510</groupId>
+        <artifactId>event-driven-server</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>catalog-service</artifactId>
+    <name>Catalog Service</name>
+    <dependencies>
+        <dependency><groupId>edu.cs6510</groupId><artifactId>event-messaging</artifactId><version>0.0.1-SNAPSHOT</version></dependency>
+        <!-- 功能：独立声明依赖，不再引用 shared-persistence。 -->
+        <!-- 提供 Spring MVC、HTTP 请求处理、JSON 转换和默认内嵌 Web 服务器，接收查询商品请求，把商品对象转成 JSON 返回 -->
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc</artifactId></dependency>
+        <!-- 提供参数校验能力：使用 @Valid 配合 @NotBlank、@Positive 等校验输入 -->
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency>
+        <!-- 提供 Spring Data JPA 和默认的 Hibernate，实现对象与数据库表之间的映射：Repository 查询商品，得到 Product 对象 -->
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency>
+        <!-- 提供 PostgreSQL JDBC 驱动，让 Java 能连接 PostgreSQL数据库，发送 SQL、读取结果 -->
+        <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <!-- 功能：打包为可直接使用 java -jar 启动的 Spring Boot JAR。 -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
