@@ -21,16 +21,23 @@
 ## 通信与正确性
 
 - **命令和查询**：Gateway 将原 HTTP 操作映射为 Kafka 请求，在关联的回复到达后返回相同状态码和 JSON。Checkout 使用相同机制读取 Catalog 快照、向 Inventory 发送库存命令。请求使用独立关联 ID，交易和 Saga ID 用作相关操作的分区键。
-- **扫描事件**：一次成功扫描在 Checkout 的同一本地事务中保存购物篮变更和 outbox；后台将 `ItemScanned` 事件批次发布到 `<prefix>.scans`。获得 broker 确认后标记 outbox 已发布。Analytics 用事件 UUID 在自己的 inbox 去重，然后生成规范事件序列与排名。扫描成功无需等待 Analytics。
+- **命令持久化**：START 通过一条自动提交的 PostgreSQL SQL 保存购物篮和可重放的命令结果。SCAN 默认交给 `ScanWriter`，将已排队的最多 64 个不同购物篮、不同命令 ID 合并为一条原子 SQL，同时写入各自的明细、总额、outbox 和去重结果。队列容量为 512，不额外等待凑批；每个调用只在自己的写入持久提交后获得成功。找不到或已关闭的购物篮分别返回 404/409，不影响有效购物篮；整批约束失败时，使用原命令 ID 逐条重试，保持幂等。单条路径与批量路径都保留命令 ID 唯一约束及并发重放保护，详见 [ADR 0004](docs/adr/0004-durable-batched-scans.md)。
+- **扫描事件**：后台将 `ItemScanned` 事件批次发布到 `<prefix>.scans`。获得 broker 确认后标记 outbox 已发布。Analytics 用事件 UUID 在自己的 inbox 去重，然后生成规范事件序列与排名。扫描成功无需等待 Analytics。
 - **结账 Saga**：Checkout 是持久化协调者，冻结购物篮，经 Kafka 请求 Inventory 原子扣减整篮库存，再持久化本地完成状态与收据。常规成功路径中库存扣减即确认；兼容恢复旧 `COMMITTING` 状态。拒绝时执行取消并恢复购物篮；未知结果保留同一个 Saga ID 重试。没有跨库事务，也不声称纯事件编舞。
 - **同步完成**：完成接口返回成功之前，Inventory 扣减和 Checkout 完成状态必须都已持久化。收到 broker 发布确认不等于业务完成。
 - **分析查询**：Gateway 先通过 Kafka 取得 Checkout 的持久化扫描计数，再要求 Analytics 等待该检查点及应发布窗口。超过等待上限时明确失败，避免把陈旧排名当成已经追平的结果。
 
 Kafka 与数据库之间没有分布式原子提交。消息可能重投；命令结果、Saga ID 和 inbox 事件 ID 提供幂等处理。本项目采用至少一次投递，不声称端到端 exactly-once。架构取舍见 [ADRs](docs/adr/0001-use-kafka.md)。
 
+扫描队列满或服务停止时明确返回 503。已接受的扫描如果等待超过 6 秒，仍可能正在排队或提交；超时表示结果未知，不代表回滚。内部 Kafka 命令 ID 用于 broker 重放去重，原 HTTP API 没有让客户端提交这个 ID 的接口，因此重新发起一次 HTTP 扫描不自动等同于重放同一个命令。
+
+Kafka 网络 poller 与业务处理分开：poller 持续拉取命令，虚拟线程处理数据库操作和跨服务等待，同一个业务 key 的命令在当前进程内串行执行。回复获得 broker 的 `acks=all` 确认后，该命令才算处理完成；每个分区仅提交连续已完成记录构成的 offset 前缀。失败时暂停该分区，等待已派发工作结束，再从失败位置重放；rebalance 后丢弃旧 assignment 的完成通知。故障重放和跨副本切换可能重复或交错执行，不提供故障期间的全局严格顺序。
+
+每个业务服务默认只使用一个命令 poller，新建命令 topic 默认四个分区。JFR 诊断发现，较多消费者加上极短的空 fetch 等待会产生大量短命对象，因此默认恢复 `fetch.max.wait.ms=500`，并显式保留 `fetch.min.bytes=1`。500 毫秒是数据不足时的等待上限；有可返回的消息时，broker 可立即响应，不会为每条消息固定等待 500 毫秒。[Kafka 消费者配置说明](https://kafka.apache.org/42/configuration/consumer-configs/#fetch-max-wait-ms)
+
 ## 本地准备与启动
 
-需要 Java 21+、Python 3、PostgreSQL 15+ 与 `psql`、Docker Compose，以及 Maven Wrapper 能访问的 Maven 依赖源。以下命令在 `event-driven-server/` 执行。
+需要 Java 21+、Python 3、PostgreSQL 15+ 与 `psql`，以及 Maven Wrapper 能访问的 Maven 依赖源。Kafka 可以通过 Docker Compose 启动，也可以使用下面的原生 helper。以下命令在 `event-driven-server/` 执行。
 
 先启动单节点 Kafka：
 
@@ -71,6 +78,23 @@ python3 scripts/system.py init-db
 
 停止 Kafka 使用 `docker compose down`；普通停止保留 Kafka 卷。更改 topic 前缀可以隔离实验消息，但不能替代隔离实验数据库。
 
+### 可选：原生 Kafka
+
+原生模式使用相同的官方 Kafka 4.2.1 发行版。首次提取需要运行中的 Docker 和本地缓存的 `apache/kafka:4.2.1` 镜像；没有缓存时先执行 `docker pull apache/kafka:4.2.1`。helper 只创建一个临时停止状态的容器来复制发行版，随后移除该容器。发行版保存在 `target/kafka-dist/` 后，后续原生启动无需运行 Docker 虚拟机。
+
+```bash
+# 终端一：前台运行；Ctrl+C 关闭本次启动的 broker
+python3 scripts/kafka-local.py
+```
+
+```bash
+# 终端二：供基准脚本使用
+export KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:19092
+# ./run.sh 还会读取 .env；请同时将其中的 KAFKA_BOOTSTRAP_SERVERS 改为此地址。
+```
+
+默认 broker/controller 分别监听 `127.0.0.1:19092` / `19093`。数据保存在 `target/native-kafka/data/`，配置和日志在 `target/native-kafka/19092/`。`--distribution`、`--port`、`--data-dir` 可选其他位置；controller 使用 broker 的下一个端口。已有元数据不会重新格式化，数据不会因退出被删除，端口占用时明确失败。helper 直接以 Java 参数列表启动 Kafka，兼容项目路径中的空格。原生与 Compose 都是单节点、复制因子 1，不提供高可用保障；压测需记录实际部署方式与后台负载。
+
 ## 主要配置
 
 | 环境变量 | 用途 / 默认值 |
@@ -78,14 +102,19 @@ python3 scripts/system.py init-db
 | `KAFKA_BOOTSTRAP_SERVERS` | Kafka 地址，默认 `127.0.0.1:9092` |
 | `KAFKA_TOPIC_PREFIX` | Topic 命名空间，默认 `selfcheckout` |
 | `KAFKA_REQUEST_TIMEOUT_MS` | 一次 Kafka 请求/业务回复的等待预算，默认 `8000` |
-| `KAFKA_TOPIC_PARTITIONS` | 新建命令 topic 的分区数，默认 `24` |
-| `KAFKA_CHECKOUT_CONCURRENCY` / `KAFKA_INVENTORY_CONCURRENCY` | 命令消费者数量，默认 `24` / `4` |
-| `KAFKA_CATALOG_CONCURRENCY` / `KAFKA_ANALYTICS_CONCURRENCY` | 命令消费者数量，各默认 `1` |
+| `KAFKA_TOPIC_PARTITIONS` | 新建命令 topic 的分区数，默认 `4` |
+| `KAFKA_CHECKOUT_CONCURRENCY` / `KAFKA_INVENTORY_CONCURRENCY` | 命令网络 poller 数量，各默认 `1`；业务处理使用独立虚拟线程 |
+| `KAFKA_CATALOG_CONCURRENCY` / `KAFKA_ANALYTICS_CONCURRENCY` | 命令网络 poller 数量，各默认 `1` |
 | `KAFKA_CONSUMER_CONCURRENCY` | 可选的统一并发覆盖值；服务专属设置优先 |
+| `KAFKA_FETCH_MAX_WAIT_MS` / `KAFKA_EVENT_FETCH_MAX_WAIT_MS` | 命令/回复与扫描事件的数据不足 fetch 等待上限，各默认 `500` 毫秒；`fetch.min.bytes=1` |
+| `KAFKA_COMMAND_POLL_MS` | 命令 poll 的等待上限，默认 `100` 毫秒；可用消息可提前返回 |
+| `KAFKA_PERFORMANCE_LOG` | 累积记录请求确认、排队、业务处理和回复确认等阶段耗时，默认 `false`，诊断时可开启 |
 | `ANALYTICS_QUERY_CATCH_UP_MS` | 分析查询等待扫描及窗口追平的上限，默认 `6000` |
-| `EVENT_JAVA_OPTS` | 启动脚本传递给每个 JVM 的参数 |
-| `CHECKOUT_INVENTORY_MAX_IN_FLIGHT` | Checkout 同时等待的库存命令上限 |
-| `INVENTORY_MAX_IN_FLIGHT` | Inventory 操作并发上限 |
+| `EVENT_JAVA_OPTS` | 每个服务 JVM 的参数，默认 `-Xms64m -Xmx256m -XX:TieredStopAtLevel=4` |
+| `CHECKOUT_INVENTORY_MAX_IN_FLIGHT` | Checkout 同时等待的库存命令上限，默认 `64` |
+| `INVENTORY_MAX_IN_FLIGHT` | Inventory 本地数据库操作并发上限，默认 `8` |
+| `CHECKOUT_SCAN_BATCHING_ENABLED` | 默认 `true`，将已排队的独立购物篮扫描合批提交；`false` 使用原单条 SQL 路径 |
+| `CHECKOUT_SCAN_PERFORMANCE_LOG` | 批大小与 SQL 写入耗时诊断，默认 `false` |
 
 实际部署值以 `.env.example`、启动参数和压测的环境记录为准。Topic 创建参数不会自动修改已有 topic。每个服务的回复 topic 和扫描事件 topic 使用一个分区；Kafka 只保证单个分区内的记录顺序。
 
@@ -107,14 +136,22 @@ curl 'http://localhost:8080/inventory/low-stock?threshold=1001'
 curl 'http://localhost:8080/analytics/popular-items?limit=10'
 ```
 
-81 个组件测试已通过，覆盖消息边界、HTTP 合同、Saga 和 inbox/outbox。`python3 scripts/test-events.py` 已通过真实 Kafka 与四个临时数据库的集成验收，验证事件重放去重、Analytics 停机追赶，以及 Inventory 停机和 Checkout 重启恢复。证据见 [validation.json](reports/submission/validation.json)。
+当前代码的 113 项测试已通过，其中 13 项使用真实 PostgreSQL，验证并发命令去重、批次回滚、独立购物篮结果及跨副本重放；扫描 writer 的测试还覆盖队列满、超时和关闭。真实数据库测试通过 `CHECKOUT_TEST_DB_URL`、`CHECKOUT_TEST_DB_USER`、`CHECKOUT_TEST_DB_PASSWORD` 配置连接，在独立 schema 内运行，测试账号需要创建 schema 的权限；未配置 URL 时会跳过这 13 项。现有 [validation.json](reports/submission/validation.json) 仍记录优化前的 81 项组件测试和真实 Kafka 集成验收；其中的停机追赶、重复事件及 Saga 恢复结果不能代替本轮优化后的集成验证。
 
 正式压测使用原始 Load Client，不修改客户端业务逻辑：
 
 ```bash
 python3 scripts/benchmark-isolated.py --publish-submission
+# 使用上述原生 broker 时：
+KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:19092 python3 scripts/benchmark-isolated.py --broker-deployment=native --publish-submission
 ```
 
-该命令分别执行默认参数（10 stations / 60 秒）及 `--stations=100 --duration=120`，使用临时数据库和隔离的 Kafka topic 命名空间。正式负载准备 2,000 个 SKU、每 SKU 1,000,000 件起始库存；普通 `run.sh` 的小型演示种子不等同于该数据集。测试账号需具备本地数据库创建/清理能力，可配置 `SAGA_TEST_DB_USER`、`SAGA_TEST_DB_PASSWORD`。它不会重置正常运行的四套数据库；只在两组审计均通过后更新正式提交目录。
+以上两行是不同部署的运行示例，选择对应的一行。脚本分别执行默认参数（10 stations / 60 秒）及 `--stations=100 --duration=120`，使用临时数据库和隔离的 Kafka topic 命名空间。正式负载准备 2,000 个 SKU、每 SKU 1,000,000 件起始库存；普通 `run.sh` 的小型演示种子不等同于该数据集。测试账号需具备本地数据库创建/清理能力，可配置 `SAGA_TEST_DB_USER`、`SAGA_TEST_DB_PASSWORD`。它不会重置正常运行的四套数据库。
+
+`--database-locale=C` 是可选的排序规则对照实验，只在基准脚本新建的临时数据库上设置 `LC_COLLATE` / `LC_CTYPE`；默认仍为 `inherited`。普通 `run.sh` 不修改现有数据库的排序规则。对照报告会记录实际 locale，比较时应区分这一部署条件。
+
+`--publish-submission` 只有在两组各 17 项正确性审计通过，且每组的交易数和 TPS 都不低于最近 Microservices 正式报告时才更新提交目录：Default 至少 11,031 笔 / 183.7414278303277 TPS，Stress 至少 31,431 笔 / 261.68575815703423 TPS。比较报告还单独记录更早的用户提供 Service-Based 参考，避免混淆基准。未达标的原始实测结果保留在本轮 `reports/load-*` 目录。
+
+当前 `reports/submission/` 仍是优化前的 426 / 1,501 笔交易报告，未达到上述目标；不能将它们当作本轮优化已经达标的证据。性能目标及本轮集成验证全部通过后，才应替换正式提交材料。
 
 提交清单见 [SUBMISSION.md](SUBMISSION.md)，实测结果和限制见 [PERFORMANCE.md](PERFORMANCE.md)。没有经过本版本实际执行的报告不能作为 Kafka 版本的成绩证据。

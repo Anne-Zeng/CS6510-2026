@@ -1,0 +1,50 @@
+{
+  "catalog": {
+    "port": 5432,
+    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
+    "sharedBuffers": "128MB",
+    "synchronousCommit": "on",
+    "fsync": "on",
+    "walSyncMethod": "open_datasync",
+    "commitDelayMicros": "0",
+    "commitSiblings": "5",
+    "databaseCollation": "C",
+    "databaseCtype": "C"
+  },
+  "checkout": {
+    "port": 5432,
+    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
+    "sharedBuffers": "128MB",
+    "synchronousCommit": "on",
+    "fsync": "on",
+    "walSyncMethod": "open_datasync",
+    "commitDelayMicros": "0",
+    "commitSiblings": "5",
+    "databaseCollation": "C",
+    "databaseCtype": "C"
+  },
+  "analytics": {
+    "port": 5432,
+    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
+    "sharedBuffers": "128MB",
+    "synchronousCommit": "on",
+    "fsync": "on",
+    "walSyncMethod": "open_datasync",
+    "commitDelayMicros": "0",
+    "commitSiblings": "5",
+    "databaseCollation": "C",
+    "databaseCtype": "C"
+  },
+  "inventory": {
+    "port": 5432,
+    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
+    "sharedBuffers": "128MB",
+    "synchronousCommit": "on",
+    "fsync": "on",
+    "walSyncMethod": "open_datasync",
+    "commitDelayMicros": "0",
+    "commitSiblings": "5",
+    "databaseCollation": "C",
+    "databaseCtype": "C"
+  }
+}

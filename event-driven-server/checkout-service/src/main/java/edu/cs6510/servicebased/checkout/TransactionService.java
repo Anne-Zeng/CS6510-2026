@@ -20,12 +20,16 @@ public class TransactionService {
   this.checkout=checkout;this.catalog=catalog;this.transactions=transactions;this.coordinator=coordinator;
  }
  public TransactionResponse startTransaction(StartTransactionRequest request) {
-  requireText(request.stationId(),"stationId");
-  if(request.stationId().trim().length()>255) throw new BusinessException(INVALID_REQUEST,"INVALID_REQUEST","stationId too long");
-  String id=UUID.randomUUID().toString(), station=request.stationId().trim();
+  String station=prepareStation(request);
+  String id=UUID.randomUUID().toString();
   Instant now=Instant.now();
   checkout.create(id,station,now);
   return new TransactionResponse(id,station,"OPEN",0,new BigDecimal("0.00"),now);
+ }
+ public String prepareStation(StartTransactionRequest request) {
+  requireText(request.stationId(),"stationId");
+  if(request.stationId().trim().length()>255) throw new BusinessException(INVALID_REQUEST,"INVALID_REQUEST","stationId too long");
+  return request.stationId().trim();
  }
 
  public TransactionResponse getTransaction(String id) { return transactions.execute(status->checkout.find(id)); }

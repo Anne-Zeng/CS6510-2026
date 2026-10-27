@@ -1,0 +1,91 @@
+{
+  "startedAt": "2026-10-27T03:48:55.973786-07:00",
+  "commitDelayMicros": 0,
+  "commitSiblings": 5,
+  "catalogSize": 2000,
+  "initialStockPerSku": 1000000,
+  "databaseServers": "shared",
+  "sharedBuffersPerTemporaryServer": null,
+  "jvmOptions": [
+    "-Xms64m",
+    "-Xmx256m",
+    "-XX:TieredStopAtLevel=4"
+  ],
+  "springVirtualThreads": false,
+  "poolLimits": {
+    "catalog": 8,
+    "checkout": 16,
+    "analytics": 8,
+    "inventory": 8
+  },
+  "checkoutInventoryMaxInFlight": 64,
+  "wholeSagaConcurrencyCap": null,
+  "inventoryMaxInFlight": 8,
+  "scanMode": "atomic command result, basket and outbox; bounded coalescing of independent scans",
+  "scanBatchingEnabled": true,
+  "scanQueueCapacity": 512,
+  "scanMaxBatchSize": 64,
+  "catalogReadMode": "immutable local SKU map loaded once through Kafka",
+  "outboxMaxBatchesPerPoll": 10,
+  "canonicalEventWrite": "atomic with inbox receipt",
+  "outboxBatchSize": 500,
+  "outboxAcknowledgementSqlPerBatch": 1,
+  "rankingWriteSqlPerWindow": 1,
+  "broker": "Apache Kafka 4.2.1; local single-node KRaft; replication factor 1",
+  "brokerDeployment": "native",
+  "kafkaBootstrapServers": "127.0.0.1:19092",
+  "kafkaCommandPartitions": 4,
+  "kafkaCommandConsumersPerService": {
+    "catalog": 1,
+    "checkout": 1,
+    "analytics": 1,
+    "inventory": 1
+  },
+  "kafkaFetchMaxWaitMs": 500,
+  "kafkaEventFetchMaxWaitMs": 500,
+  "kafkaCommandPollMs": 100,
+  "kafkaPerformanceLog": true,
+  "kafkaRequestTimeoutMs": 8000,
+  "interServiceTransport": "Kafka only; request/reply plus ItemScanned domain events",
+  "commandDelivery": "at least once; durable START/SCAN command result deduplication",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "logicalCpuCount": 8,
+  "loadAverageAtStart": [
+    4.30322265625,
+    8.697265625,
+    9.68505859375
+  ],
+  "javaVersion": "java version \"22.0.1\" 2024-04-16\nJava(TM) SE Runtime Environment (build 22.0.1+8-16)\nJava HotSpot(TM) 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)",
+  "serviceJavaVersion": "java version \"22.0.1\" 2024-04-16\nJava(TM) SE Runtime Environment (build 22.0.1+8-16)\nJava HotSpot(TM) 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)",
+  "postgresqlVersion": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.1.1.101), 64-bit",
+  "synchronousCommit": "on",
+  "loadClientSourceSha256": {
+    "ApiClient.java": "dcf870f04b768c15a733a67e00f7385aec91b8ebb4688c52326febe910b92550",
+    "CatalogItem.java": "8a1aafa055f9e21a3428eb59064de2a31fb0a1b97547f04d3098e80d8ead86b3",
+    "Config.java": "1e5bbf39e6c4e2a856e75d81302ce67955d316112627a4f9c20f04421c34c5a0",
+    "ItemSampler.java": "53499d3aea32e6cc817474b777379418708f87a44eb0f4242d5a8d6125048515",
+    "Json.java": "05e846c03f36d6690e6fc1bb9226daad773b02b494bf86398c2bb7d5b4e81ba6",
+    "Main.java": "e8cd788d420a0f4072226147bce20616b0bd0a6bbf86193aa16175e436f244cd",
+    "Metrics.java": "9f786914be0562a24bd4fa165f8a4c13b47399989d52d8d92f8992d1162fd86c",
+    "ReportWriter.java": "d3b5c20836acedd2e0fa3b97862b7c2967c5c57aa2d1b8b4a2c36d83e08999a0",
+    "StationWorker.java": "074bf7c9394cd81f92dde80a9de2df0cd67798f1630ba069a85c1a5502491386"
+  },
+  "serviceSchemaSha256": {
+    "catalog": "b20d84cfe856d222a64b20a6a68d1747b344bdc5173fdc06b05bdbcc67e75fc5",
+    "checkout": "7e542d4f7abc0590a489172b9034b4b185ab87596627e4f4f56884466ef0799e",
+    "analytics": "f2792859d7ebf69f0f363f70e0fd896f21238d63441b012648a3ca7cce29e96d",
+    "inventory": "27305679757ade46cc19ecd1201020e6796b1ad863f55b756624c560b1e34c2e"
+  },
+  "serviceJarSha256": {
+    "catalog": "e34b233e806ef68fdca4c9385e32d0328021d8ab995830c3b17e7cc0a7eebb5d",
+    "checkout": "d7af614551af92763857189cd2583ab8f5350635773ac42f78c5427bc604af5f",
+    "analytics": "bc1726356548be85000c2eabdeab50cd15b12b0f15537f2adb5765196d100d94",
+    "inventory": "69c02e7666b7768f57374f1f8dc8544612b90497b24c6dc08fa9cae3f19edd37"
+  },
+  "gatewayJarSha256": "f42c64caebfdc89820a28da78ddace23f0497795b7b03e9b182f812775992df2",
+  "comparison": "Previous microservices-server/reports/submission reports; different run time/background load, same client workload and data",
+  "kafkaTopicPrefixes": {
+    "default": "eventbench_20e3684c930d",
+    "stress": "eventbench_d07ccd0283ea"
+  }
+}

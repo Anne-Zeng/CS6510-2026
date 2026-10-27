@@ -1,0 +1,99 @@
+{
+  "status": "CANDIDATE_NOT_SUBMISSION",
+  "goalAchieved": false,
+  "pairedCandidate": {
+    "sourceRun": "reports/load-20261027-034855",
+    "implementation": "Optimized batched scan implementation before the final batch SQL join simplification",
+    "currentFinalArtifactPerformanceProven": false,
+    "auditsPerWorkload": 17,
+    "allAuditsPassed": true,
+    "meetsPreviousMicroservicesPerformance": false
+  },
+  "laterDefaultOnly": {
+    "sourceRun": "reports/load-20261027-035732",
+    "implementation": "After the final batch SQL join simplification",
+    "validWorkloads": [
+      "default"
+    ],
+    "invalidWorkloads": [
+      "stress"
+    ],
+    "stressInvalidReason": "Host disk exhaustion stopped PostgreSQL and Kafka; no valid stress JSON/audit exists",
+    "completePairedPerformanceEvidence": false
+  },
+  "currentSourceVerification": {
+    "testsPassed": 113,
+    "realPostgresqlTestsIncluded": 13,
+    "newRealKafkaRecoveryIntegration": "PENDING",
+    "note": "These current-source test results do not change the implementation hashes of the earlier paired candidate",
+    "pythonSafetyTests": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "command": "python3 -m unittest discover -s scripts/tests -p 'test_*.py'"
+    }
+  },
+  "nextLoadPrerequisite": "At least 4 GiB of free disk space; rerun both required workloads and current real-Kafka recovery validation before publishing",
+  "copiedFiles": {
+    "report-default.json": {
+      "source": "reports/load-20261027-034855/default/report-20261027-035018.json",
+      "sha256": "061141c5bb20f7278c8a92dedd3d9e8f7949210558c3a20c98ffa4122b683016",
+      "bytes": 2163
+    },
+    "correctness-default.json": {
+      "source": "reports/load-20261027-034855/default/correctness.json",
+      "sha256": "e48ad66ac092e0639b689afe0e95fa7a92235977e6941bcddbff615c9af17ffa",
+      "bytes": 1002
+    },
+    "database-deployment-default.json": {
+      "source": "reports/load-20261027-034855/default/database-deployment.json",
+      "sha256": "6ebfc72647cfb61b15499e527b3b41fbb14038ead7a171c2ee23a4608dcd9220",
+      "bytes": 1388
+    },
+    "report-stress.json": {
+      "source": "reports/load-20261027-034855/stress/report-20261027-035252.json",
+      "sha256": "9e13091c72f3e8e068bc52cb169fd6b62e3bcc4bc7957e7c076c4e648684293b",
+      "bytes": 2178
+    },
+    "correctness-stress.json": {
+      "source": "reports/load-20261027-034855/stress/correctness.json",
+      "sha256": "24f8295959d7d660a40477b83321d3e990df3b9d40c536dea583efbd4086b7dc",
+      "bytes": 1005
+    },
+    "database-deployment-stress.json": {
+      "source": "reports/load-20261027-034855/stress/database-deployment.json",
+      "sha256": "6ebfc72647cfb61b15499e527b3b41fbb14038ead7a171c2ee23a4608dcd9220",
+      "bytes": 1388
+    },
+    "environment.json": {
+      "source": "reports/load-20261027-034855/environment.json",
+      "sha256": "8719a510eac0c4d41e809aad13b59f9aaee8ea57498793103943ffa33fd1df43",
+      "bytes": 4277
+    },
+    "comparison.json": {
+      "source": "reports/load-20261027-034855/comparison.json",
+      "sha256": "52f8a9cf3e91fffd652fe46ae814ec70701cad200516bcdaa035346bda6789d9",
+      "bytes": 1984
+    },
+    "latest-default/report-default.json": {
+      "source": "reports/load-20261027-035732/default/report-20261027-035858.json",
+      "sha256": "0a11b3994ee4fd26c084bf5bf13b5358d070019b4403873e9b539fad40a4c5e4",
+      "bytes": 2166
+    },
+    "latest-default/correctness.json": {
+      "source": "reports/load-20261027-035732/default/correctness.json",
+      "sha256": "1a7fcb45d5c986492be9deae057e60e2011e8e4d02af4c4100a6a93ae45e13a7",
+      "bytes": 1002
+    },
+    "latest-default/database-deployment.json": {
+      "source": "reports/load-20261027-035732/default/database-deployment.json",
+      "sha256": "24d81dfa7c68981bba3858fb4c9723d8df616d8049b2534e55726f025880001b",
+      "bytes": 1308
+    },
+    "latest-default/environment.json": {
+      "source": "reports/load-20261027-035732/environment.json",
+      "sha256": "d7d66318c523209a537f4c84746f00a6f61c132bad9d010bb11e666a6806ac0a",
+      "bytes": 4312
+    }
+  }
+}

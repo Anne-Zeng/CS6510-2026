@@ -1,0 +1,40 @@
+{
+  "default": {
+    "previousMicroservicesReport": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/microservices-server/reports/submission/report-default.json",
+    "historicalGeneratedAt": "2026-10-25T07:05:05.819600Z",
+    "previousTransactions": 11031,
+    "eventBasedTransactions": 5120,
+    "previousTps": 183.7414278303277,
+    "eventBasedTps": 85.18933283466515,
+    "meetsPreviousPerformance": false,
+    "throughputChangePercent": -53.6362953958693,
+    "previousCompleteP95Ms": 36.484208,
+    "eventBasedCompleteP95Ms": 43.440875,
+    "previousCompleteP99Ms": 74.383042,
+    "eventBasedCompleteP99Ms": 83.386375,
+    "eventBasedErrors": 0,
+    "auditPassed": true,
+    "userProvidedServiceBasedReference": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/microservices-server/reports/comparison/service-based-user-reference-20261016.json",
+    "userProvidedServiceBasedTps": 222.78710556423016,
+    "changeVsUserProvidedPercent": -61.76200026526902
+  },
+  "stress": {
+    "previousMicroservicesReport": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/microservices-server/reports/submission/report-stress.json",
+    "historicalGeneratedAt": "2026-10-25T07:07:31.219483Z",
+    "previousTransactions": 31431,
+    "eventBasedTransactions": 15112,
+    "previousTps": 261.68575815703423,
+    "eventBasedTps": 125.22416657247872,
+    "meetsPreviousPerformance": false,
+    "throughputChangePercent": -52.1471220083237,
+    "previousCompleteP95Ms": 370.135792,
+    "eventBasedCompleteP95Ms": 114.228584,
+    "previousCompleteP99Ms": 533.488625,
+    "eventBasedCompleteP99Ms": 202.895084,
+    "eventBasedErrors": 0,
+    "auditPassed": true,
+    "userProvidedServiceBasedReference": "/Users/anne/Desktop/CS6510advanced software dev/CS6510-2026/microservices-server/reports/comparison/service-based-user-reference-20261016.json",
+    "userProvidedServiceBasedTps": 230.14249678485896,
+    "changeVsUserProvidedPercent": -45.58842094707074
+  }
+}

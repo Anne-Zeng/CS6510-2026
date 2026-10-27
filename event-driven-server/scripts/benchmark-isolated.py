@@ -27,20 +27,47 @@ def require(condition, message):
     if not condition: raise RuntimeError(message)
 
 
+def require_disk_space(minimum_gib):
+    free = shutil.disk_usage(ROOT).free
+    require(free >= minimum_gib * 1024**3,
+            f'Insufficient disk space: {free / 1024**3:.2f} GiB free; '
+            f'at least {minimum_gib} GiB is required. No submission reports were replaced.')
+
+
+def run_client(command, log):
+    """Stop the isolated workload before low disk space can stop PostgreSQL/Kafka."""
+    process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
+    try:
+        while process.poll() is None:
+            require_disk_space(2)
+            try: process.wait(timeout=1)
+            except subprocess.TimeoutExpired: pass
+        require(process.returncode == 0, f'Load client failed with exit code {process.returncode}')
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try: process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill();process.wait()
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--modes',nargs='+',choices=('default','stress'),default=['default','stress'])
     parser.add_argument('--database-servers',choices=('shared','separate'),default='shared',help='Four logical databases on the existing server, or four temporary PostgreSQL instances with 32MB shared_buffers each')
+    parser.add_argument('--database-locale',choices=('inherited','C'),default='inherited',help='Locale for new temporary logical databases; C avoids locale-aware ordering of opaque IDs. Temporary separate servers already use C')
     parser.add_argument('--commit-delay-micros',type=int,default=0,help='Optional PostgreSQL durable group-commit delay; requires an admin test account')
-    parser.add_argument('--java-opts',default='-Xms32m -Xmx160m -XX:TieredStopAtLevel=1',help='Service JVM options; memory-conscious defaults for five processes on a laptop')
-    parser.add_argument('--checkout-inventory-max-in-flight',type=int,default=8)
+    parser.add_argument('--java-opts',default='-Xms64m -Xmx256m -XX:TieredStopAtLevel=4',help='Service JVM options; matches the previous Microservices formal run')
+    parser.add_argument('--checkout-inventory-max-in-flight',type=int,default=64)
     parser.add_argument('--inventory-max-in-flight',type=int,default=8)
     parser.add_argument('--virtual-threads',action='store_true',help='Enable Spring virtual request threads; disabled unless explicitly requested')
-    parser.add_argument('--publish-submission',action='store_true',help='Back up and update reports/submission only after both workloads pass all audits')
+    parser.add_argument('--broker-deployment',choices=('docker','native','external'),default='docker',help='Record the actual broker deployment; does not start or alter it')
+    parser.add_argument('--publish-submission',action='store_true',help='Publish only after both workloads pass audits and meet the previous Microservices transaction/TPS baseline')
     args=parser.parse_args()
     require(0<=args.commit_delay_micros<=100000,'Invalid commit delay')
     require(args.checkout_inventory_max_in_flight>0 and args.inventory_max_in_flight>0,'Concurrency limits must be positive')
     require(not args.publish_submission or set(args.modes)=={'default','stress'},'Publishing requires both default and stress workloads')
+    require_disk_space(4)
     java_options=shlex.split(args.java_opts)
     user=os.environ.get('SAGA_TEST_DB_USER',getpass.getuser())
     password=os.environ.get('SAGA_TEST_DB_PASSWORD','')
@@ -72,34 +99,44 @@ def main():
     metadata={'startedAt':datetime.now(ZoneInfo('America/Los_Angeles')).isoformat(),
               'commitDelayMicros':args.commit_delay_micros,'commitSiblings':0 if args.commit_delay_micros else 5,
               'catalogSize':catalog_size,'initialStockPerSku':opening,'databaseServers':args.database_servers,'sharedBuffersPerTemporaryServer':'32MB' if args.database_servers=='separate' else None,
+              'temporaryDatabaseLocale':'C' if args.database_servers=='separate' else args.database_locale,
               'jvmOptions':java_options,
               'springVirtualThreads':args.virtual_threads,
               'poolLimits':{'catalog':8,'checkout':16,'analytics':8,'inventory':8},
               'checkoutInventoryMaxInFlight':args.checkout_inventory_max_in_flight,'wholeSagaConcurrencyCap':None,'inventoryMaxInFlight':args.inventory_max_in_flight,
-              'scanMode':'per-request local transaction with command result, basket and outbox; no application scan queue',
+              'scanMode':'atomic command result, basket and outbox; bounded coalescing of independent scans' if os.environ.get('CHECKOUT_SCAN_BATCHING_ENABLED','true').lower()=='true' else 'single atomic SQL per scan',
+              'scanBatchingEnabled':os.environ.get('CHECKOUT_SCAN_BATCHING_ENABLED','true').lower()=='true',
+              'scanQueueCapacity':512,'scanMaxBatchSize':64,
               'catalogReadMode':'immutable local SKU map loaded once through Kafka',
               'outboxMaxBatchesPerPoll':10,'canonicalEventWrite':'atomic with inbox receipt','outboxBatchSize':500,'outboxAcknowledgementSqlPerBatch':1,'rankingWriteSqlPerWindow':1,
               'broker':'Apache Kafka 4.2.1; local single-node KRaft; replication factor 1',
+              'brokerDeployment':args.broker_deployment,
               'kafkaBootstrapServers':os.environ.get('KAFKA_BOOTSTRAP_SERVERS','127.0.0.1:9092'),
-              'kafkaCommandPartitions':int(os.environ.get('KAFKA_TOPIC_PARTITIONS','24')),
-              'kafkaCommandConsumersPerService':{name:int(os.environ.get('KAFKA_'+name.upper()+'_CONCURRENCY',os.environ.get('KAFKA_CONSUMER_CONCURRENCY',str({'checkout':24,'inventory':4}.get(name,1))))) for name in SERVICES},
+              'kafkaCommandPartitions':int(os.environ.get('KAFKA_TOPIC_PARTITIONS','4')),
+              'kafkaCommandConsumersPerService':{name:int(os.environ.get('KAFKA_'+name.upper()+'_CONCURRENCY',os.environ.get('KAFKA_CONSUMER_CONCURRENCY','1'))) for name in SERVICES},
+              'kafkaFetchMaxWaitMs':int(os.environ.get('KAFKA_FETCH_MAX_WAIT_MS','500')),
+              'kafkaEventFetchMaxWaitMs':int(os.environ.get('KAFKA_EVENT_FETCH_MAX_WAIT_MS','500')),
+              'kafkaCommandPollMs':int(os.environ.get('KAFKA_COMMAND_POLL_MS','100')),
+              'kafkaPerformanceLog':os.environ.get('KAFKA_PERFORMANCE_LOG','false').lower()=='true',
               'kafkaRequestTimeoutMs':int(os.environ.get('KAFKA_REQUEST_TIMEOUT_MS','8000')),
               'interServiceTransport':'Kafka only; request/reply plus ItemScanned domain events',
               'commandDelivery':'at least once; durable START/SCAN command result deduplication',
               'platform':platform.platform(),'logicalCpuCount':os.cpu_count(),
               'loadAverageAtStart':list(os.getloadavg()),
               'javaVersion':subprocess.run(['java','-version'],capture_output=True,text=True).stderr.strip(),
+              'serviceJavaVersion':subprocess.run([os.environ.get('JAVA_BIN','java'),'-version'],capture_output=True,text=True).stderr.strip(),
               'postgresqlVersion':admin('SELECT version()'),
               'synchronousCommit':admin('SHOW synchronous_commit'),
               'loadClientSourceSha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
               'serviceSchemaSha256':{name:hashlib.sha256((ROOT/(name+'-service')/'database/schema.sql').read_bytes()).hexdigest() for name in SERVICES},
               'serviceJarSha256':{name:hashlib.sha256((ROOT/(name+'-service')/'target'/(name+'-service-0.0.1-SNAPSHOT.jar')).read_bytes()).hexdigest() for name in SERVICES},
               'gatewayJarSha256':hashlib.sha256((ROOT/'gateway/target/gateway-0.0.1-SNAPSHOT.jar').read_bytes()).hexdigest(),
-              'comparison':'Historical service-based-server/reports/submission reports; different run time and background load, one run per workload'}
+              'comparison':'Previous microservices-server/reports/submission reports; different run time/background load, same client workload and data'}
     (output/'environment.json').write_text(json.dumps(metadata,indent=2)+'\n')
     print('Reports: '+str(output),flush=True)
     results={}
     for mode in args.modes:
+        require_disk_space(4)
         folder=output/mode;folder.mkdir()
         suffix=uuid.uuid4().hex[:12]
         names={name:'eventbench_'+name+'_'+suffix for name in SERVICES}
@@ -137,9 +174,12 @@ def main():
                     'synchronousCommit':admin('SHOW synchronous_commit',database_ports[name]),
                     'fsync':admin('SHOW fsync',database_ports[name]),
                     'walSyncMethod':admin('SHOW wal_sync_method',database_ports[name])}
+                require(deployment[name]['synchronousCommit']=='on' and deployment[name]['fsync']=='on',
+                        name+': benchmark requires synchronous_commit=on and fsync=on')
             (folder/'database-deployment.json').write_text(json.dumps(deployment,indent=2)+'\n')
             for name in SERVICES:
-                admin('CREATE DATABASE '+names[name],database_ports[name]);created.append((names[name],database_ports[name]))
+                locale=" TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C'" if args.database_locale=='C' else ''
+                admin('CREATE DATABASE '+names[name]+locale,database_ports[name]);created.append((names[name],database_ports[name]))
                 if args.commit_delay_micros:
                     admin('ALTER DATABASE '+names[name]+' SET commit_delay='+str(args.commit_delay_micros),database_ports[name])
                     admin('ALTER DATABASE '+names[name]+' SET commit_siblings=0',database_ports[name])
@@ -156,7 +196,7 @@ def main():
             command=['java','-cp',str(classes),'Main','--baseUrl='+cluster.base_url,'--reportDir='+str(folder)]
             if mode=='stress':command+=['--stations=100','--duration=120']
             print(f'Running {mode}: '+('10 stations / 60 seconds' if mode=='default' else '100 stations / 120 seconds'),flush=True)
-            with open(folder/'client.log','w') as log:subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,check=True)
+            with open(folder/'client.log','w') as log:run_client(command,log)
             reports=list(folder.glob('report-*.json'));require(len(reports)==1,'Expected one original client report')
             report=json.loads(reports[0].read_text())
             (output/('report-'+mode+'.json')).write_text(reports[0].read_text())
@@ -224,17 +264,19 @@ def main():
                 if temporary_directory:temporary_directory.cleanup()
     summary={}
     for mode,result in results.items():
-        previous_path=ROOT.parent/'service-based-server/reports/submission'/('report-'+mode+'.json')
+        previous_path=ROOT.parent/'microservices-server/reports/submission'/('report-'+mode+'.json')
         previous=json.loads(previous_path.read_text());current=result['report']
         completion=lambda report:next(op for op in report['operations'] if op['operation']=='COMPLETE_TRANSACTION')
-        summary[mode]={'historicalServiceBasedReport':str(previous_path),'historicalGeneratedAt':previous['generatedAt'],
-                       'serviceBasedTps':previous['transactionsPerSecond'],'eventBasedTps':current['transactionsPerSecond'],
+        summary[mode]={'previousMicroservicesReport':str(previous_path),'historicalGeneratedAt':previous['generatedAt'],
+                       'previousTransactions':previous['totalTransactions'],'eventBasedTransactions':current['totalTransactions'],
+                       'previousTps':previous['transactionsPerSecond'],'eventBasedTps':current['transactionsPerSecond'],
+                       'meetsPreviousPerformance':current['totalTransactions']>=previous['totalTransactions'] and current['transactionsPerSecond']>=previous['transactionsPerSecond'],
                        'throughputChangePercent':(current['transactionsPerSecond']/previous['transactionsPerSecond']-1)*100,
-                       'serviceBasedCompleteP95Ms':completion(previous)['p95Ms'],'eventBasedCompleteP95Ms':completion(current)['p95Ms'],
-                       'serviceBasedCompleteP99Ms':completion(previous)['p99Ms'],'eventBasedCompleteP99Ms':completion(current)['p99Ms'],
+                       'previousCompleteP95Ms':completion(previous)['p95Ms'],'eventBasedCompleteP95Ms':completion(current)['p95Ms'],
+                       'previousCompleteP99Ms':completion(previous)['p99Ms'],'eventBasedCompleteP99Ms':completion(current)['p99Ms'],
                        'eventBasedErrors':sum(op['errorCount'] for op in current['operations']),
                        'auditPassed':result['auditPassed']}
-        user_reference=ROOT/'reports/comparison/service-based-user-reference-20261016.json'
+        user_reference=ROOT.parent/'microservices-server/reports/comparison/service-based-user-reference-20261016.json'
         if user_reference.is_file():
             reference=json.loads(user_reference.read_text())[mode]
             summary[mode].update(userProvidedServiceBasedReference=str(user_reference),
@@ -245,6 +287,7 @@ def main():
     print('Reports: '+str(output),flush=True)
     require(all(r['auditPassed'] for r in results.values()),'At least one workload failed correctness checks; see correctness.json')
     if args.publish_submission:
+        require(all(item['meetsPreviousPerformance'] for item in summary.values()),'Refusing to replace submission: transactions or TPS are below the previous Microservices baseline')
         submission=ROOT/'reports/submission'
         if submission.exists():shutil.copytree(submission,output/'previous-submission')
         submission.mkdir(parents=True,exist_ok=True)

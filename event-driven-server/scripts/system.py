@@ -140,7 +140,7 @@ class Cluster:
         for key in ('SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_PASSWORD', 'SPRING_APPLICATION_JSON', 'PGPASSWORD'):
             environment.pop(key, None)
         command = [self.env.get('JAVA_BIN', 'java'),
-                   *shlex.split(self.env.get('EVENT_JAVA_OPTS', '-Xms32m -Xmx160m -XX:TieredStopAtLevel=1')),
+                   *shlex.split(self.env.get('EVENT_JAVA_OPTS', '-Xms64m -Xmx256m -XX:TieredStopAtLevel=4')),
                    '-jar', str(self.jar(name))]
         if name == 'gateway':
             command += [f'--port={self.ports[name]}']

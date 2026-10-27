@@ -1,55 +1,92 @@
 package edu.cs6510.servicebased.checkout.persistence;
 
-import edu.cs6510.events.Json;
 import edu.cs6510.events.Reply;
+import edu.cs6510.servicebased.checkout.common.BusinessException;
+import edu.cs6510.servicebased.checkout.contract.CatalogItemResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class CommandInboxTest {
- JdbcTemplate jdbc=mock(JdbcTemplate.class);
- PlatformTransactionManager manager=mock(PlatformTransactionManager.class);
- TransactionStatus transaction=mock(TransactionStatus.class);
- CommandInbox inbox=new CommandInbox(jdbc,new TransactionTemplate(manager));
- @SuppressWarnings("unchecked")
- void cachedReplies(List<Reply> replies) {
-  when(jdbc.query(eq("SELECT status,body FROM command_results WHERE request_id=?"),any(RowMapper.class),eq("request-1")))
-   .thenReturn(replies);
-  when(manager.getTransaction(any())).thenReturn(transaction);
- }
- @Test void redeliveryReturnsCommittedResponseWithoutCallingBusinessOperation() {
-  var committed=new Reply(201,"{\"transactionId\":\"existing\"}");
-  cachedReplies(List.of(committed));
-  Supplier<?> operation=mock(Supplier.class);
-  assertEquals(committed,inbox.execute("request-1",201,operation));
-  verifyNoInteractions(operation);
-  verify(jdbc,never()).update(anyString(),any(Object[].class));
-  verify(manager).commit(transaction);
- }
- @Test void databaseFailureRollsBackAndDoesNotCacheAFailedResult() {
-  cachedReplies(List.of());
-  assertThrows(DataAccessResourceFailureException.class,()->inbox.execute("request-1",200,()-> {
-   throw new DataAccessResourceFailureException("database disconnected");
-  }));
-  verify(manager).rollback(transaction);verify(manager,never()).commit(any());
-  verify(jdbc,never()).update(anyString(),any(Object[].class));
- }
- @Test void resultInsertFailureRollsBackTheBusinessTransaction() {
-  cachedReplies(List.of());
-  String body=Json.write(Map.of("itemCount",1));
-  when(jdbc.update("INSERT INTO command_results(request_id,status,body) VALUES (?,?,?)","request-1",200,body))
-   .thenThrow(new DataAccessResourceFailureException("result insert failed"));
-  assertThrows(DataAccessResourceFailureException.class,
-   ()->inbox.execute("request-1",200,()->Map.of("itemCount",1)));
-  verify(manager).rollback(transaction);verify(manager,never()).commit(any());
- }
+    JdbcTemplate jdbc=mock(JdbcTemplate.class);
+    CommandInbox inbox=new CommandInbox(jdbc);
+    CatalogItemResponse item=new CatalogItemResponse("A","Apple",new BigDecimal("1.25"));
+
+    @Test void normalScanWritesBasketOutboxAndReplayResponseInOneDatabaseCall() {
+        var committed=new Reply(200,"{\"itemCount\":1}");
+        queryReturns(List.of(committed));
+        assertEquals(committed,inbox.scan("request-1","basket-1",item));
+        verify(jdbc,times(1)).query(anyString(),any(RowMapper.class),any(Object[].class));
+        verifyNoMoreInteractions(jdbc);
+    }
+
+    @Test void normalStartCreatesBasketAndReplayResponseInOneDatabaseCall() {
+        var committed=new Reply(201,"{\"transactionId\":\"basket-1\"}");
+        queryReturns(List.of(committed));
+        assertEquals(committed,inbox.start("request-1","station-1"));
+        verify(jdbc,times(1)).query(anyString(),any(RowMapper.class),any(Object[].class));
+        verifyNoMoreInteractions(jdbc);
+    }
+
+    @Test void concurrentUniqueRequestConflictReadsWinnerAfterAtomicStatementRollback() {
+        var committed=new Reply(200,"{\"itemCount\":1}");
+        queryThrowsThenReturns(new DuplicateKeyException("command_results_pkey"),List.of(committed));
+        assertEquals(committed,inbox.scan("request-1","basket-1",item));
+        verify(jdbc).query(eq("SELECT status,body FROM command_results WHERE request_id=?"),
+                any(RowMapper.class),eq("request-1"));
+    }
+
+    @Test void unrelatedConstraintFailureIsNotMistakenForACommittedReplay() {
+        var failure=new DuplicateKeyException("some_other_constraint");
+        queryThrowsThenReturns(failure,List.of());
+        assertSame(failure,assertThrows(DuplicateKeyException.class,
+                ()->inbox.start("request-1","station-1")));
+    }
+
+    @Test void failedDatabaseStatementNeverReturnsASuccessfulReply() {
+        var failure=new DataAccessResourceFailureException("database disconnected");
+        doThrow(failure).when(jdbc).query(anyString(),any(RowMapper.class),any(Object[].class));
+        assertSame(failure,assertThrows(DataAccessResourceFailureException.class,
+                ()->inbox.scan("request-1","basket-1",item)));
+        verify(jdbc,times(1)).query(anyString(),any(RowMapper.class),any(Object[].class));
+    }
+
+    @Test void replayCanBeRecoveredWhenBasketCompletedAfterTheStatementSnapshot() {
+        var committed=new Reply(200,"{\"itemCount\":1}");
+        queryReturns(Arrays.asList((Reply)null),List.of(committed));
+        assertEquals(committed,inbox.scan("request-1","basket-1",item));
+    }
+
+    @Test void closedBasketRemainsAConflictWhenThereIsNoCommittedCommand() {
+        queryReturns(Arrays.asList((Reply)null),List.of());
+        var failure=assertThrows(BusinessException.class,()->inbox.scan("request-1","basket-1",item));
+        assertEquals("TRANSACTION_NOT_OPEN",failure.getCode());
+    }
+
+    @Test void absentBasketRemainsNotFoundWhenThereIsNoCommittedCommand() {
+        queryReturns(List.of(),List.of());
+        var failure=assertThrows(BusinessException.class,()->inbox.scan("request-1","basket-1",item));
+        assertEquals("TRANSACTION_NOT_FOUND",failure.getCode());
+    }
+
+    @SuppressWarnings({"unchecked","rawtypes"})
+    private void queryReturns(List<Reply> first,List<Reply>... next) {
+        var result=doReturn(first);
+        for(var value:next) result=result.doReturn(value);
+        result.when(jdbc).query(anyString(),any(RowMapper.class),any(Object[].class));
+    }
+
+    @SuppressWarnings({"unchecked","rawtypes"})
+    private void queryThrowsThenReturns(RuntimeException failure,List<Reply> next) {
+        doThrow(failure).doReturn(next).when(jdbc).query(anyString(),any(RowMapper.class),any(Object[].class));
+    }
 }

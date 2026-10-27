@@ -31,10 +31,10 @@ The default topic prefix is `selfcheckout`; tests and benchmarks use separate na
 
 | Topic suffix | Producer → consumer | Purpose / default partitions |
 | --- | --- | --- |
-| `catalog.requests` | Gateway or Checkout → Catalog | `GET_CATALOG` / 24 |
-| `checkout.requests` | Gateway → Checkout | `START_TRANSACTION`, `GET_TRANSACTION`, `SCAN_ITEM`, `COMPLETE_TRANSACTION`, `SCAN_CHECKPOINT` / 24 |
-| `inventory.requests` | Gateway or Checkout → Inventory | `GET_LOW_STOCK`, `INVENTORY_RESERVE`, `INVENTORY_GET`, `INVENTORY_CONFIRM`, `INVENTORY_RELEASE` / 24 |
-| `analytics.requests` | Gateway → Analytics | `GET_POPULAR_ITEMS` / 24 |
+| `catalog.requests` | Gateway or Checkout → Catalog | `GET_CATALOG` / 4 |
+| `checkout.requests` | Gateway → Checkout | `START_TRANSACTION`, `GET_TRANSACTION`, `SCAN_ITEM`, `COMPLETE_TRANSACTION`, `SCAN_CHECKPOINT` / 4 |
+| `inventory.requests` | Gateway or Checkout → Inventory | `GET_LOW_STOCK`, `INVENTORY_RESERVE`, `INVENTORY_GET`, `INVENTORY_CONFIRM`, `INVENTORY_RELEASE` / 4 |
+| `analytics.requests` | Gateway → Analytics | `GET_POPULAR_ITEMS` / 4 |
 | `<service>.replies` | Handling service → original requester | One reply topic for each of the five service names / 1 |
 | `scans` | Checkout outbox → Analytics | Batches representing `ItemScanned` domain events / 1 |
 
@@ -42,7 +42,13 @@ A full topic name is `<prefix>.<suffix>`. A request is `{id, operation, key, bod
 
 Command/query RPC messages express requested work. `ItemScanned` describes a committed business fact. This architecture uses both forms; it does not call every broker record a domain event.
 
-Reply consumers are separate from command consumers, allowing Checkout to await an Inventory reply without blocking its own reply subscription. Command consumers share a group per service; Checkout defaults to 24 workers, Inventory to 4, and Catalog/Analytics to one each. Durable offsets are committed asynchronously after successful processing and synchronized on close using only completed offsets; commit failure may cause safe redelivery. Per-instance reply consumers correlate pending futures and need no durable offsets. A Kafka partition provides ordering within that partition, not a total order across all command topics.
+Reply consumers are separate from command pollers, allowing Checkout to await an Inventory reply without blocking its reply subscription. Command pollers share a group per service; each business service defaults to one poller. Each poller dispatches up to 64 records per poll to virtual-thread business handlers. Network poller counts do not cap the number of unrelated business keys that can execute concurrently.
+
+Command/reply and scan-event fetch waits both default to 500 ms with `fetch.min.bytes=1`. The wait applies when no sufficient data is available; an available record satisfies the minimum immediately. This avoids frequent empty fetches and their allocation overhead observed in JFR. The command poll timeout is independently configurable through `KAFKA_COMMAND_POLL_MS` (default 100 ms). `KAFKA_PERFORMANCE_LOG` enables cumulative stage timings for diagnosis and defaults to false, keeping diagnostic sampling off during normal runs.
+
+`KeyedDispatcher` serializes work for the same business key within a process while unrelated keys proceed independently. A command is complete only after its handler and correlated reply publication have succeeded, including the producer's `acks=all` acknowledgment. `PartitionProgress` tracks out-of-order completions and permits committing only the completed prefix of delivered records in each partition. Offset commits are asynchronous, at most once per 100 ms of poll-loop progress; shutdown and revocation commit only the known completed prefix. Failed work pauses the partition until dispatched work has finished, then seeks to the earliest failed offset for replay. Assignment tokens prevent late results from an old assignment from advancing a new owner's offsets.
+
+Normal same-key processing is serialized, but a failed command may be replayed after other work has run; old workers can also finish after reassignment. These rules provide at-least-once processing with local idempotency, not strict command ordering throughout faults or a total order across replicas/topics. Per-instance reply consumers correlate pending futures and need no durable offsets.
 
 ## Synchronous request/response
 
@@ -59,12 +65,18 @@ sequenceDiagram
     S->>D: Execute query or commit local business transaction
     D-->>S: Result / committed changes
     S->>K: Correlated status + JSON reply
-    Note over S,K: Commit request offset after handler/reply callback succeeds
+    Note over S,K: Advance completed offset prefix after reply broker ACK
     K-->>G: Reply for waiting correlation ID
     G-->>L: Same business HTTP status and JSON
 ```
 
-Gateway returns no early `202 Accepted`. Service errors retain their status/body. A transport failure gives 502; a request timeout gives 504. A timeout is an unknown business outcome and is not evidence that the operation was rolled back. Checkout stores START/SCAN command results in the same local transaction as those writes so redelivery of the same Kafka request ID returns the stored result.
+Gateway returns no early `202 Accepted`. Service errors retain their status/body. A transport failure gives 502; a request timeout gives 504. A timeout is an unknown business outcome and is not evidence that the operation was rolled back. Requesters wait for the correlated business reply without first blocking on a separate producer-send acknowledgment; send failures still fail the waiting future.
+
+Checkout's START path uses one autocommitted PostgreSQL statement to write the basket and replayable command result. SCAN defaults to a `ScanWriter` that drains already queued requests into batches of at most 64 distinct baskets and request IDs. Its bounded queue holds 512 requests, and it adds no intentional collection delay. Duplicate IDs or baskets are deferred to later batches in local queue order. A one-request batch uses the original single-scan SQL; disabling `CHECKOUT_SCAN_BATCHING_ENABLED` also selects that path.
+
+Each batch uses one atomic SQL statement to lock baskets in stable transaction-ID order and commit their line changes, totals, outbox events and command results together. Cached results bypass writes. Missing and closed baskets receive independent 404/409 results while valid baskets commit. If a constraint or concurrent duplicate aborts the statement, the writer retries each command through the single-scan path with its original ID. The request-ID unique constraint rolls back a losing duplicate's entire statement; a fresh read returns the winner's saved result. A successful reply is released only after the database call has committed. Batch size/write-time diagnostics are opt-in through `CHECKOUT_SCAN_PERFORMANCE_LOG` (default false). See [ADR 0004](adr/0004-durable-batched-scans.md).
+
+Queue-full and stopping conditions return explicit 503 results. An accepted scan that exceeds the six-second wait can still commit; its timeout is an unknown outcome, not a rollback. The public HTTP contract does not accept the internal Kafka request ID, so issuing another HTTP scan is not automatically an idempotent retry of the first one.
 
 ## Scan event propagation
 
@@ -79,7 +91,8 @@ sequenceDiagram
     participant AD as Analytics DB
     G->>K: SCAN_ITEM(transaction ID, SKU)
     K->>C: Consume scan command
-    C->>CD: Commit basket + scan_outbox + command result
+    Note over C,CD: ScanWriter drains already queued independent baskets (max 64)
+    C->>CD: One atomic SQL: basket changes + outbox + command results
     CD-->>C: Committed
     C->>K: Successful scan reply
     K-->>G: Reply; HTTP scan can finish
@@ -144,6 +157,10 @@ The normal `INVENTORY_RESERVE` success already persists the inventory debit as `
 
 ## Delivery and deployment limits
 
-The producer uses `acks=all` and producer idempotence. Consumers commit offsets after successful callbacks and seek back for retry on callback failure. Those settings do not make database writes atomic with Kafka offsets. The design relies on application idempotency, transactional outbox/inbox and recoverable Sagas for at-least-once handling.
+The producer uses `acks=all` and producer idempotence. Command consumers commit completed prefixes after business processing and reply acknowledgments; scan consumers commit after durable inbox processing. Failures retain work for replay. Those settings do not make database writes atomic with Kafka offsets. The design relies on application idempotency, transactional outbox/inbox and recoverable Sagas for at-least-once handling.
 
-The Compose broker is a single KRaft node with replication factor 1 and a persistent volume. There is no broker-failure redundancy or demonstrated zero-downtime migration. Poison records currently retry and can block their partition; no dead-letter workflow is claimed. Persisted command results/outbox/inbox need a future retention policy for long-lived production use. See [ADRs](adr/0001-use-kafka.md) for the scoped decisions.
+The Compose broker is a single KRaft node with replication factor 1 and a persistent volume. The optional `scripts/kafka-local.py` foreground launcher runs the official Kafka 4.2.1 distribution natively at `127.0.0.1:19092` (controller: `19093`). Initial distribution extraction requires Docker and the cached official image; subsequent native runs use `target/kafka-dist` without a Docker VM. Data is retained at `target/native-kafka/data`, with configuration/logs under `target/native-kafka/19092`. Both deployments have replication factor 1 and no broker-failure redundancy or demonstrated zero-downtime migration. Benchmark evidence records the actual deployment.
+
+The benchmark's optional `--database-locale=C` experiment sets collation and character classification only when creating its temporary logical databases. The normal default is inherited locale, and application startup does not change existing database collation. Locale changes must be identified separately in performance comparisons.
+
+Poison records currently retry and can block their partition; no dead-letter workflow is claimed. Persisted command results/outbox/inbox need a future retention policy for long-lived production use. See [ADRs](adr/0001-use-kafka.md) for the scoped decisions.
