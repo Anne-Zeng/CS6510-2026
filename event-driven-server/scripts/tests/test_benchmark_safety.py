@@ -15,6 +15,13 @@ spec.loader.exec_module(benchmark)
 
 
 class BenchmarkSafetyTest(unittest.TestCase):
+    def test_wal_override_cannot_alter_the_existing_postgresql_server(self):
+        with patch.object(benchmark.subprocess, 'run') as invoked, \
+                patch.object(sys, 'argv', ['benchmark-isolated.py', '--wal-sync-method', 'fsync']):
+            with self.assertRaisesRegex(RuntimeError, 'requires temporary separate'):
+                benchmark.main()
+            invoked.assert_not_called()
+
     def test_low_disk_refuses_work_before_starting_any_process(self):
         usage = benchmark.shutil.disk_usage(benchmark.ROOT)._replace(free=1024**3)
         with patch.object(benchmark.shutil, 'disk_usage', return_value=usage), \

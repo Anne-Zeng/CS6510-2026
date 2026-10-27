@@ -19,10 +19,10 @@
     "window_boundaries_correct": true,
     "every_window_ranking_independently_recomputed": true
   },
-  "totalScans": 4470,
-  "dueWindows": 8,
+  "totalScans": 166198,
+  "dueWindows": 332,
   "clientRequestErrors": 0,
-  "analyticsCatchUpSeconds": 0.6604453329928219,
-  "databaseCompletedTransactions": 426,
-  "clientAcknowledgedTransactions": 426
+  "analyticsCatchUpSeconds": 0.14472920796833932,
+  "databaseCompletedTransactions": 15866,
+  "clientAcknowledgedTransactions": 15866
 }

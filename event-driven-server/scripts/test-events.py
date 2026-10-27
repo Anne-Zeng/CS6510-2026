@@ -17,9 +17,11 @@ from pathlib import Path
 import random
 import re
 import signal
+import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -250,6 +252,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, help='Directory for validation.json and service logs')
     parser.add_argument('--base-port', type=int, help='Five consecutive ports; default selects a free range')
+    parser.add_argument('--temporary-postgres',action='store_true',help='Start and remove a test-owned PostgreSQL instance instead of using the existing server')
     args = parser.parse_args()
     suffix = uuid.uuid4().hex[:12]
     output = (args.output or ROOT / 'reports' / ('integration-' + datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S') + '-' + suffix[:6])).resolve()
@@ -264,17 +267,25 @@ def main():
     password = environment.get('SAGA_TEST_DB_PASSWORD', '')
     host = environment.get('SAGA_TEST_DB_HOST', '127.0.0.1')
     port = int(environment.get('SAGA_TEST_DB_PORT', '5432'))
+    base_port=args.base_port or available_base_port()
+    require(1024<=base_port<=65531,'Choose a base port from 1024 through 65531')
+    private_directory=Path(tempfile.mkdtemp(prefix='event_integration_pg_',dir='/tmp')) if args.temporary_postgres else None
+    if private_directory:
+        host='127.0.0.1';port=available_base_port()
+        while port in range(base_port,base_port+5):port=available_base_port()
+    environment['SPRING_PROFILES_ACTIVE']=''
     for service in SERVICES:
         environment.update({service.upper() + '_DB_URL': f'jdbc:postgresql://{host}:{port}/event_test_{service}_{suffix}',
                             service.upper() + '_DB_USER': user, service.upper() + '_DB_PASSWORD': password})
     databases = {service: Database(service, environment) for service in SERVICES}
     admin_environment = {**environment, 'CATALOG_DB_URL': f'jdbc:postgresql://{host}:{port}/postgres'}
     admin = Database('catalog', admin_environment)
-    cluster = Cluster(databases, output, args.base_port or available_base_port(), environment)
+    cluster = Cluster(databases, output, base_port, environment)
     created = []
     checks = []
     result = {'success': False, 'startedAt': datetime.now(timezone.utc).isoformat(),
               'kafkaTopicPrefix': environment['KAFKA_TOPIC_PREFIX'], 'checks': checks,
+              'testOwnedPostgresql':bool(private_directory),'databasePort':port,'databaseTransport':'tcp',
               'temporaryDatabasesRemoved': False}
 
     def record(name, details):
@@ -283,6 +294,11 @@ def main():
 
     failure = None
     try:
+        if private_directory:
+            data=private_directory/'data'
+            subprocess.run(['initdb','-D',str(data),'-U',user,'-A','trust','--locale=C','-E','UTF8'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,check=True)
+            options=f'-p {port} -h 127.0.0.1 -k {private_directory} -c shared_buffers=32MB -c max_connections=64 -c synchronous_commit=on -c fsync=on -c full_page_writes=on'
+            subprocess.run(['pg_ctl','-D',str(data),'-l',str(output/'test-owned-postgresql.log'),'-o',options,'-w','start'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,check=True)
         record('no_outbound_http_clients', static_transport_check())
         cluster.check_ports()
         cluster.check_jars()
@@ -296,6 +312,12 @@ def main():
                 database.sql("INSERT INTO inventory(sku,name,current_stock) SELECT 'SKU-'||lpad(n::text,6,'0'),'Item '||n,10000 FROM generate_series(1,20) n")
         cluster.start()
         result['audit'] = run_checks(cluster, databases, record)
+        result['observedApplicationConnections']={}
+        for service,database in databases.items():
+            observed=json.loads(database.sql("SELECT json_build_object('unix',count(*) FILTER(WHERE client_addr IS NULL),'tcp',count(*) FILTER(WHERE client_addr IS NOT NULL)) FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid()"))
+            result['observedApplicationConnections'][service]=observed
+            require(observed['tcp']>0 and observed['unix']==0,
+                    service+': observed database transport differs from the configuration')
         result['success'] = True
     except Exception as error:
         failure = error
@@ -312,6 +334,16 @@ def main():
                 admin.sql('DROP DATABASE ' + name + ' WITH (FORCE)')
             except Exception as error:
                 cleanup_errors.append(str(error))
+        if private_directory:
+            try:
+                data=private_directory/'data'
+                if (data/'postmaster.pid').is_file():
+                    subprocess.run(['pg_ctl','-D',str(data),'-m','fast','-w','stop'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,check=True)
+                shutil.rmtree(private_directory)
+                result['testOwnedPostgresqlRemoved']=True
+            except Exception as error:
+                cleanup_errors.append(str(error))
+                result['testOwnedPostgresqlRemoved']=False
         result['temporaryDatabasesRemoved'] = not cleanup_errors
         if cleanup_errors:
             result['cleanupErrors'] = cleanup_errors

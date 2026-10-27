@@ -8,6 +8,7 @@ is preserved. Stop this helper with Ctrl+C to stop only its broker process.
 from pathlib import Path
 import argparse
 import base64
+import json
 import os
 import shutil
 import signal
@@ -134,9 +135,14 @@ def main():
                         help='Loopback broker port; controller uses the next port (default: 19092)')
     parser.add_argument('--data-dir', type=Path, default=ROOT / 'target/native-kafka/data',
                         help='Persistent Kafka data directory; existing data is never removed')
+    parser.add_argument('--network-threads',type=int,default=3,help='Kafka network threads (1–32)')
+    parser.add_argument('--io-threads',type=int,default=4,help='Kafka request processing threads (1–32)')
+    parser.add_argument('--heap-mb',type=int,default=256,help='Broker maximum heap in MiB (128–4096)')
     args = parser.parse_args()
     if not 1024 <= args.port <= 65534:
         parser.error('--port must be between 1024 and 65534')
+    if not 1<=args.network_threads<=32 or not 1<=args.io_threads<=32 or not 128<=args.heap_mb<=4096:
+        parser.error('Use 1–32 network/IO threads and 128–4096 MiB heap')
     java = os.environ.get('JAVA_BIN', 'java')
     if shutil.which(java) is None:
         raise RuntimeError(f'Java executable not found: {java}')
@@ -173,11 +179,16 @@ def main():
         'transaction.state.log.replication.factor': 1,
         'transaction.state.log.min.isr': 1,
         'group.initial.rebalance.delay.ms': 0,
-        'num.network.threads': 3,
-        'num.io.threads': 4,
+        'num.network.threads': args.network_threads,
+        'num.io.threads': args.io_threads,
     }
     config.write_text(''.join(f'{key}={property_value(value)}\n' for key, value in properties.items()))
-    java_command = [java, '-Xms128m', '-Xmx256m', f'-Dkafka.logs.dir={logs}',
+    (runtime/'deployment.json').write_text(json.dumps({
+        'jvmOptions':['-Xms128m',f'-Xmx{args.heap_mb}m'],
+        'networkThreads':args.network_threads,'ioThreads':args.io_threads,
+        'kafkaClientJars':[p.name for p in (distribution/'libs').glob('kafka-clients-*.jar')]
+    },indent=2)+'\n')
+    java_command = [java, '-Xms128m', f'-Xmx{args.heap_mb}m', f'-Dkafka.logs.dir={logs}',
                     '-Dlog4j2.configurationFile=' + (distribution / 'config/log4j2.yaml').as_uri(),
                     '-cp', str(distribution / 'libs/*')]
     if not metadata.exists():

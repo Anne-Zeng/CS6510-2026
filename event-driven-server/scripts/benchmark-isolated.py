@@ -27,6 +27,15 @@ def require(condition, message):
     if not condition: raise RuntimeError(message)
 
 
+def power_state():
+    if sys.platform!='darwin':return None
+    settings=subprocess.run(['pmset','-g','custom'],capture_output=True,text=True)
+    source=subprocess.run(['pmset','-g','batt'],capture_output=True,text=True)
+    return {'powerSource':source.stdout.splitlines()[0] if source.returncode==0 and source.stdout else None,
+            'powerModeSettings':[line.strip() for line in settings.stdout.splitlines()
+                                 if 'Power:' in line or 'lowpowermode' in line] if settings.returncode==0 else None}
+
+
 def require_disk_space(minimum_gib):
     free = shutil.disk_usage(ROOT).free
     require(free >= minimum_gib * 1024**3,
@@ -56,6 +65,7 @@ def main():
     parser.add_argument('--modes',nargs='+',choices=('default','stress'),default=['default','stress'])
     parser.add_argument('--database-servers',choices=('shared','separate'),default='shared',help='Four logical databases on the existing server, or four temporary PostgreSQL instances with 32MB shared_buffers each')
     parser.add_argument('--database-locale',choices=('inherited','C'),default='inherited',help='Locale for new temporary logical databases; C avoids locale-aware ordering of opaque IDs. Temporary separate servers already use C')
+    parser.add_argument('--wal-sync-method',choices=('default','fsync','open_datasync'),default='default',help='Durable WAL synchronization method for temporary PostgreSQL servers only; never changes the existing server')
     parser.add_argument('--commit-delay-micros',type=int,default=0,help='Optional PostgreSQL durable group-commit delay; requires an admin test account')
     parser.add_argument('--java-opts',default='-Xms64m -Xmx256m -XX:TieredStopAtLevel=4',help='Service JVM options; matches the previous Microservices formal run')
     parser.add_argument('--checkout-inventory-max-in-flight',type=int,default=64)
@@ -66,6 +76,7 @@ def main():
     args=parser.parse_args()
     require(0<=args.commit_delay_micros<=100000,'Invalid commit delay')
     require(args.checkout_inventory_max_in_flight>0 and args.inventory_max_in_flight>0,'Concurrency limits must be positive')
+    require(args.wal_sync_method=='default' or args.database_servers=='separate','A WAL synchronization override requires temporary separate database servers')
     require(not args.publish_submission or set(args.modes)=={'default','stress'},'Publishing requires both default and stress workloads')
     require_disk_space(4)
     java_options=shlex.split(args.java_opts)
@@ -99,7 +110,9 @@ def main():
     metadata={'startedAt':datetime.now(ZoneInfo('America/Los_Angeles')).isoformat(),
               'commitDelayMicros':args.commit_delay_micros,'commitSiblings':0 if args.commit_delay_micros else 5,
               'catalogSize':catalog_size,'initialStockPerSku':opening,'databaseServers':args.database_servers,'sharedBuffersPerTemporaryServer':'32MB' if args.database_servers=='separate' else None,
+              'databaseTransport':'tcp',
               'temporaryDatabaseLocale':'C' if args.database_servers=='separate' else args.database_locale,
+              'requestedWalSyncMethod':args.wal_sync_method,
               'jvmOptions':java_options,
               'springVirtualThreads':args.virtual_threads,
               'poolLimits':{'catalog':8,'checkout':16,'analytics':8,'inventory':8},
@@ -117,12 +130,14 @@ def main():
               'kafkaFetchMaxWaitMs':int(os.environ.get('KAFKA_FETCH_MAX_WAIT_MS','500')),
               'kafkaEventFetchMaxWaitMs':int(os.environ.get('KAFKA_EVENT_FETCH_MAX_WAIT_MS','500')),
               'kafkaCommandPollMs':int(os.environ.get('KAFKA_COMMAND_POLL_MS','100')),
+              'kafkaHeaderEnvelopes':os.environ.get('KAFKA_HEADER_ENVELOPES','true').lower()=='true',
               'kafkaPerformanceLog':os.environ.get('KAFKA_PERFORMANCE_LOG','false').lower()=='true',
               'kafkaRequestTimeoutMs':int(os.environ.get('KAFKA_REQUEST_TIMEOUT_MS','8000')),
               'interServiceTransport':'Kafka only; request/reply plus ItemScanned domain events',
               'commandDelivery':'at least once; durable START/SCAN command result deduplication',
               'platform':platform.platform(),'logicalCpuCount':os.cpu_count(),
               'loadAverageAtStart':list(os.getloadavg()),
+              'powerStateAtStart':power_state(),
               'javaVersion':subprocess.run(['java','-version'],capture_output=True,text=True).stderr.strip(),
               'serviceJavaVersion':subprocess.run([os.environ.get('JAVA_BIN','java'),'-version'],capture_output=True,text=True).stderr.strip(),
               'postgresqlVersion':admin('SELECT version()'),
@@ -132,12 +147,24 @@ def main():
               'serviceJarSha256':{name:hashlib.sha256((ROOT/(name+'-service')/'target'/(name+'-service-0.0.1-SNAPSHOT.jar')).read_bytes()).hexdigest() for name in SERVICES},
               'gatewayJarSha256':hashlib.sha256((ROOT/'gateway/target/gateway-0.0.1-SNAPSHOT.jar').read_bytes()).hexdigest(),
               'comparison':'Previous microservices-server/reports/submission reports; different run time/background load, same client workload and data'}
+    if args.broker_deployment=='native':
+        bootstrap=metadata['kafkaBootstrapServers'].split(',')[0]
+        host,_,port=bootstrap.rpartition(':')
+        config=ROOT/'target/native-kafka'/port/'server.properties'
+        if host in ('localhost','127.0.0.1') and port.isdigit() and config.is_file():
+            visible={'num.network.threads','num.io.threads','num.partitions',
+                     'offsets.topic.replication.factor','transaction.state.log.replication.factor'}
+            metadata['nativeBrokerConfiguration']={key:value for line in config.read_text().splitlines()
+                for key,separator,value in [line.partition('=')] if separator and key in visible}
+            runtime=config.with_name('deployment.json')
+            if runtime.is_file():metadata['nativeBrokerRuntime']=json.loads(runtime.read_text())
     (output/'environment.json').write_text(json.dumps(metadata,indent=2)+'\n')
     print('Reports: '+str(output),flush=True)
     results={}
     for mode in args.modes:
         require_disk_space(4)
         folder=output/mode;folder.mkdir()
+        metadata.setdefault('powerStateByWorkload',{})[mode]={'before':power_state()}
         suffix=uuid.uuid4().hex[:12]
         names={name:'eventbench_'+name+'_'+suffix for name in SERVICES}
         created=[];cluster=None
@@ -147,6 +174,7 @@ def main():
              'CHECKOUT_INVENTORY_MAX_IN_FLIGHT':str(args.checkout_inventory_max_in_flight),
              'INVENTORY_MAX_IN_FLIGHT':str(args.inventory_max_in_flight),
              'SPRING_THREADS_VIRTUAL_ENABLED':str(args.virtual_threads).lower(),
+             'SPRING_PROFILES_ACTIVE':'',
              'CHECKOUT_OUTBOX_POLL_MS':'250','INVENTORY_PERFORMANCE_LOG':'true','CHECKOUT_INVENTORY_PERFORMANCE_LOG':'true'}
         metadata.setdefault('kafkaTopicPrefixes', {})[mode] = env['KAFKA_TOPIC_PREFIX']
         (output/'environment.json').write_text(json.dumps(metadata,indent=2)+'\n')
@@ -159,6 +187,7 @@ def main():
                     subprocess.run(['initdb','-D',str(data),'-U',user,'-A','trust','--locale=C','-E','UTF8'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,check=True)
                     database_ports[name]=free_block()
                     options=f'-p {database_ports[name]} -h 127.0.0.1 -k {base} -c shared_buffers=32MB -c max_connections=32 -c synchronous_commit=on -c fsync=on -c full_page_writes=on'
+                    if args.wal_sync_method!='default':options+=' -c wal_sync_method='+args.wal_sync_method
                     subprocess.run(['pg_ctl','-D',str(data),'-l',str(folder/(name+'-postgresql.log')),'-o',options,'-w','start'],stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,check=True)
                     temporary_servers.append(data)
             for name in SERVICES:
@@ -169,6 +198,7 @@ def main():
             deployment={}
             for name in SERVICES:
                 deployment[name]={'port':database_ports[name],
+                    'applicationTransport':'tcp',
                     'clusterStartedAt':admin('SELECT pg_postmaster_start_time()',database_ports[name]),
                     'sharedBuffers':admin('SHOW shared_buffers',database_ports[name]),
                     'synchronousCommit':admin('SHOW synchronous_commit',database_ports[name]),
@@ -199,6 +229,8 @@ def main():
             with open(folder/'client.log','w') as log:run_client(command,log)
             reports=list(folder.glob('report-*.json'));require(len(reports)==1,'Expected one original client report')
             report=json.loads(reports[0].read_text())
+            metadata['powerStateByWorkload'][mode]['after']=power_state()
+            (output/'environment.json').write_text(json.dumps(metadata,indent=2)+'\n')
             (output/('report-'+mode+'.json')).write_text(reports[0].read_text())
             errors=sum(op['errorCount'] for op in report['operations'])
             print(f"{mode}: {report['transactionsPerSecond']:.2f} transactions/sec; {errors} request errors; draining Analytics",flush=True)
@@ -215,6 +247,12 @@ def main():
                 time.sleep(.5)
             catchup_seconds=time.monotonic()-drain_started
             (folder/'popular-items-after-drain.json').write_text(json.dumps(fetch_json(cluster.base_url+'/analytics/popular-items'),indent=2)+'\n')
+            for name in SERVICES:
+                connections=json.loads(db[name].sql("SELECT json_build_object('unix',count(*) FILTER(WHERE client_addr IS NULL),'tcp',count(*) FILTER(WHERE client_addr IS NOT NULL)) FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid()"))
+                deployment[name]['observedApplicationConnections']=connections
+                require(connections['tcp']>0 and connections['unix']==0,
+                        name+': observed database transport does not match the recorded configuration')
+            (folder/'database-deployment.json').write_text(json.dumps(deployment,indent=2)+'\n')
             cluster.stop()
             checks={}
             def check(name,condition):checks[name]=bool(condition)

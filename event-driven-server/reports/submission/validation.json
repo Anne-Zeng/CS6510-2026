@@ -1,22 +1,27 @@
 {
   "componentTests": {
-    "command": "./mvnw -q package",
+    "command": "./mvnw -q package (real PostgreSQL test connection enabled)",
     "exitCode": 0,
-    "tests": 81,
+    "tests": 117,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
+  "pythonSafetyTests": {
+    "tests": 4,
+    "failures": 0,
+    "errors": 0
+  },
   "integration": {
     "success": true,
-    "startedAt": "2026-10-27T05:43:21.993112+00:00",
-    "kafkaTopicPrefix": "integration_37e01cdc7c11",
+    "startedAt": "2026-10-27T21:13:03.265092+00:00",
+    "kafkaTopicPrefix": "integration_4344f1981952",
     "checks": [
       {
         "name": "no_outbound_http_clients",
         "passed": true,
         "details": {
-          "javaFilesInspected": 71,
+          "javaFilesInspected": 72,
           "outboundHttpClients": []
         }
       },
@@ -54,6 +59,9 @@
         }
       }
     ],
+    "testOwnedPostgresql": true,
+    "databasePort": 49895,
+    "databaseTransport": "tcp",
     "temporaryDatabasesRemoved": true,
     "audit": {
       "transactions": 3,
@@ -65,6 +73,49 @@
       "eventUuidPayloadSetsMatch": true,
       "activeSagas": 0
     },
-    "finishedAt": "2026-10-27T05:45:34.944114+00:00"
+    "observedApplicationConnections": {
+      "catalog": {
+        "unix": 0,
+        "tcp": 8
+      },
+      "checkout": {
+        "unix": 0,
+        "tcp": 15
+      },
+      "analytics": {
+        "unix": 0,
+        "tcp": 8
+      },
+      "inventory": {
+        "unix": 0,
+        "tcp": 8
+      }
+    },
+    "testOwnedPostgresqlRemoved": true,
+    "finishedAt": "2026-10-27T21:13:40.062651+00:00"
+  },
+  "serviceJarSha256": {
+    "analytics-service": "d5a991f5609d3d1e55071fa23e7e4ab8dc4427da4d7baf48d50f3b8fbf19151b",
+    "catalog-service": "919366ffad0f6ce2f53d1299b26c414fd9583cf605a13e09effed3803c2517c8",
+    "checkout-service": "6d5b8f50d6654eace90012addf732475d4c566725f0434efe4371f7d00b84a7c",
+    "inventory-service": "b12f2cdbf1d5dc9fb966ac23d7815c1be5a99be4da28a912c268e667eb49b6b7",
+    "gateway": "e3e2eeb633854c7748c432d2e35abf30bdc89f9cd86365b4fe7d0af952eb82a7"
+  },
+  "integrationJvmOptions": [
+    "-Xms64m",
+    "-Xmx256m",
+    "-XX:TieredStopAtLevel=1"
+  ],
+  "performanceAcceptance": {
+    "sourceRun": "reports/load-20261027-141505",
+    "bothWorkloadsMeetPreviousTransactionsAndTps": true,
+    "auditsPassed": 34,
+    "clientSourceIdenticalToMicroservicesBaseline": true,
+    "reportCopiesByteExact": true,
+    "measuredJarHashesMatchValidation": true,
+    "reportSha256": {
+      "report-default.json": "482e8d1f1c6eb35f1db02b64fb194dbbc08546d12d75a9bf5e344c9efe175e3c",
+      "report-stress.json": "dbcd6d804ed8c65913ec1aaddc675b20511b09e521c794518b6a2c0b50ffee4a"
+    }
   }
 }

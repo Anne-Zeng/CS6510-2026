@@ -1,50 +1,70 @@
 {
   "catalog": {
-    "port": 5432,
-    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
-    "sharedBuffers": "128MB",
+    "port": 54072,
+    "applicationTransport": "tcp",
+    "clusterStartedAt": "2026-10-27 14:15:07.316512-07",
+    "sharedBuffers": "32MB",
     "synchronousCommit": "on",
     "fsync": "on",
     "walSyncMethod": "open_datasync",
     "commitDelayMicros": "0",
     "commitSiblings": "5",
-    "databaseCollation": "en_US.UTF-8",
-    "databaseCtype": "en_US.UTF-8"
+    "databaseCollation": "C",
+    "databaseCtype": "C",
+    "observedApplicationConnections": {
+      "unix": 0,
+      "tcp": 8
+    }
   },
   "checkout": {
-    "port": 5432,
-    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
-    "sharedBuffers": "128MB",
+    "port": 54073,
+    "applicationTransport": "tcp",
+    "clusterStartedAt": "2026-10-27 14:15:08.169126-07",
+    "sharedBuffers": "32MB",
     "synchronousCommit": "on",
     "fsync": "on",
     "walSyncMethod": "open_datasync",
     "commitDelayMicros": "0",
     "commitSiblings": "5",
-    "databaseCollation": "en_US.UTF-8",
-    "databaseCtype": "en_US.UTF-8"
+    "databaseCollation": "C",
+    "databaseCtype": "C",
+    "observedApplicationConnections": {
+      "unix": 0,
+      "tcp": 16
+    }
   },
   "analytics": {
-    "port": 5432,
-    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
-    "sharedBuffers": "128MB",
+    "port": 54074,
+    "applicationTransport": "tcp",
+    "clusterStartedAt": "2026-10-27 14:15:09.030393-07",
+    "sharedBuffers": "32MB",
     "synchronousCommit": "on",
     "fsync": "on",
     "walSyncMethod": "open_datasync",
     "commitDelayMicros": "0",
     "commitSiblings": "5",
-    "databaseCollation": "en_US.UTF-8",
-    "databaseCtype": "en_US.UTF-8"
+    "databaseCollation": "C",
+    "databaseCtype": "C",
+    "observedApplicationConnections": {
+      "unix": 0,
+      "tcp": 8
+    }
   },
   "inventory": {
-    "port": 5432,
-    "clusterStartedAt": "2026-09-29 19:20:08.760825-07",
-    "sharedBuffers": "128MB",
+    "port": 54075,
+    "applicationTransport": "tcp",
+    "clusterStartedAt": "2026-10-27 14:15:09.809888-07",
+    "sharedBuffers": "32MB",
     "synchronousCommit": "on",
     "fsync": "on",
     "walSyncMethod": "open_datasync",
     "commitDelayMicros": "0",
     "commitSiblings": "5",
-    "databaseCollation": "en_US.UTF-8",
-    "databaseCtype": "en_US.UTF-8"
+    "databaseCollation": "C",
+    "databaseCtype": "C",
+    "observedApplicationConnections": {
+      "unix": 0,
+      "tcp": 8
+    }
   }
 }

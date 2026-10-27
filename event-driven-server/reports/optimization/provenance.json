@@ -1,5 +1,5 @@
 {
-  "status": "CANDIDATE_NOT_SUBMISSION",
+  "status": "HISTORICAL_CANDIDATE_SUPERSEDED",
   "goalAchieved": false,
   "pairedCandidate": {
     "sourceRun": "reports/load-20261027-034855",
@@ -22,18 +22,18 @@
     "completePairedPerformanceEvidence": false
   },
   "currentSourceVerification": {
-    "testsPassed": 113,
+    "testsPassed": 117,
     "realPostgresqlTestsIncluded": 13,
-    "newRealKafkaRecoveryIntegration": "PENDING",
-    "note": "These current-source test results do not change the implementation hashes of the earlier paired candidate",
+    "newRealKafkaRecoveryIntegration": "PASS",
+    "note": "Current verification and accepted performance apply to the JAR hashes in reports/submission; the older candidate hashes above remain historical.",
     "pythonSafetyTests": {
-      "tests": 3,
+      "tests": 4,
       "failures": 0,
       "errors": 0,
       "command": "python3 -m unittest discover -s scripts/tests -p 'test_*.py'"
-    }
+    },
+    "validationReport": "reports/submission/validation.json"
   },
-  "nextLoadPrerequisite": "At least 4 GiB of free disk space; rerun both required workloads and current real-Kafka recovery validation before publishing",
   "copiedFiles": {
     "report-default.json": {
       "source": "reports/load-20261027-034855/default/report-20261027-035018.json",
@@ -95,5 +95,11 @@
       "sha256": "d7d66318c523209a537f4c84746f00a6f61c132bad9d010bb11e666a6806ac0a",
       "bytes": 4312
     }
+  },
+  "supersededBy": {
+    "sourceRun": "reports/load-20261027-141505",
+    "submissionDirectory": "reports/submission",
+    "bothPerformanceTargetsAchieved": true,
+    "validationSha256": "a34154a72ea93889405aae645e42f61bd4c51a89bd9bbee894cd625f38f2c275"
   }
 }

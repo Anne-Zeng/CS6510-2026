@@ -40,6 +40,7 @@ reports/optimization/*
 !reports/optimization/database-deployment-stress.json
 !reports/optimization/environment.json
 !reports/optimization/comparison.json
+!reports/optimization/validation.json
 !reports/optimization/latest-default/
 reports/optimization/latest-default/*
 !reports/optimization/latest-default/README.md

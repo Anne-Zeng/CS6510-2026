@@ -1,6 +1,6 @@
-# CANDIDATE — NOT SUBMISSION
+# Historical optimization candidates — superseded
 
-The transaction/TPS requirement is **not achieved**. The existing formal `reports/submission/` reports remain unchanged at 426 / 1,501 transactions. These files preserve interim measurements for review and must not be represented as a successful assignment submission.
+These files preserve historical experiments and are not the current submission. The current implementation has achieved both Microservices transaction/TPS targets: Default **15,866 / 264.23591 TPS**, Stress **34,625 / 286.39168 TPS**. See [accepted evidence](../submission/README.md).
 
 ## Complete candidate pair
 
@@ -15,8 +15,8 @@ Both workloads have zero request errors. Their artifact hashes identify an earli
 
 `provenance.json` records source paths, byte sizes and SHA-256 checksums for all preserved JSON files. `environment.json` records the candidate JAR/client hashes and actual configuration. `comparison.json` separately identifies the Microservices baseline and older user-provided Service-Based reference.
 
-## Later current-source Default only
+## Later historical Default only
 
 `latest-default/` preserves the audited Default from `reports/load-20261027-035732`: 4,935 transactions / 82.14600692026426 TPS, zero request errors and 17/17 audits passed. This run includes the later SQL correction and a temporary `C` database-locale experiment; its own environment/JAR hashes apply. The matching Stress attempt was invalidated when host disk exhaustion stopped PostgreSQL/Kafka. It has no valid report/audit and is excluded.
 
-Current-source verification passed 113 tests, including 13 real-PostgreSQL tests. Updated real-Kafka recovery integration remains pending. Further load/integration work requires at least 4 GiB free disk space. See [PERFORMANCE.md](../../PERFORMANCE.md) for findings, limitations and next checks.
+The current source subsequently passed 117 Java tests (including 13 real-PostgreSQL tests), 4 Python safety tests, real-Kafka recovery validation and both audited performance workloads. Current artifact hashes are in [submission/validation.json](../submission/validation.json). The candidate hashes above remain historical. Future load tests require at least 4 GiB free disk space; see [PERFORMANCE.md](../../PERFORMANCE.md).

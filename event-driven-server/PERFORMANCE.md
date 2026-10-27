@@ -1,67 +1,68 @@
-# Kafka performance and correctness — interim evidence
+# Kafka performance and correctness
 
-**The requested performance target remains unmet.** Both transaction count and TPS must reach the previous Microservices report in each workload. The selected optimized candidate improved substantially over the initial Kafka run but remains below both thresholds. The formal files in `reports/submission/` are unchanged; new measurements are explicitly labeled **CANDIDATE — NOT SUBMISSION** in [reports/optimization](reports/optimization/README.md).
+**Both transaction-count and TPS targets are achieved.** The accepted run is `reports/load-20261027-141505`, October 27, 2026, America/Los_Angeles. The current artifacts, original Load Client, audits and recovery validation are recorded in [reports/submission](reports/submission/README.md).
 
-## Measured results
+## Accepted results
 
-All dates below use America/Los_Angeles. Each Default workload uses 10 stations for 60 requested seconds; Stress uses 100 stations for 120 seconds. The original Load Client and basket size 1–20 are unchanged.
+| Implementation | Default transactions / TPS | Stress transactions / TPS |
+| --- | ---: | ---: |
+| Previous Microservices formal baseline | 11,031 / 183.74143 | 31,431 / 261.68576 |
+| Initial Kafka reports, October 26 | 426 / 6.91103 | 1,501 / 11.94916 |
+| Current Kafka submission | **15,866 / 264.23591** | **34,625 / 286.39168** |
 
-| Evidence / implementation | Default transactions / TPS | Stress transactions / TPS | Status |
-| --- | ---: | ---: | --- |
-| Previous Microservices formal baseline | 11,031 / 183.74143 | 31,431 / 261.68576 | Required minimum for each metric |
-| Initial Kafka formal reports, October 26 | 426 / 6.91103 | 1,501 / 11.94916 | Existing submission evidence; below target |
-| Earlier optimized batch candidate, October 27, source `load-20261027-034855` | 5,120 / 85.18933 | 15,112 / 125.22417 | Both workloads audited; below target |
-| After the later batch SQL join simplification, source `load-20261027-035732` | 4,935 / 82.14601 | No valid report | Default audited; Stress invalidated by disk exhaustion |
+Current TPS exceeds the Microservices baseline by **43.81% in Default** and **9.44% in Stress**. Both transaction counts also exceed their targets. Both workloads have zero request errors and pass all 17 independent database audits each.
 
-The paired candidate's TPS is 12.33× / 10.48× the initial Kafka figures, but still 53.64% / 52.15% below Microservices. Both transaction-count targets also remain unmet. Its JAR hashes predate the final batch SQL join simplification. **Those paired results do not prove the performance of the current final artifacts.** The later audited Default result has its own environment/JAR hashes; no valid matching Stress result exists.
-
-The selected candidate pair has zero request errors and passed all 17 independent database audits per workload. Copies preserve the original JSON bytes:
-
-- [Default report](reports/optimization/report-default.json) and [audit](reports/optimization/correctness-default.json).
-- [Stress report](reports/optimization/report-stress.json) and [audit](reports/optimization/correctness-stress.json).
-- [Candidate environment](reports/optimization/environment.json), [database deployment](reports/optimization/database-deployment-default.json), and [baseline comparison](reports/optimization/comparison.json).
-- [Provenance and SHA-256 manifest](reports/optimization/provenance.json), identifying source runs and implementation boundaries.
-- [Later Default-only report](reports/optimization/latest-default/report-default.json), [audit](reports/optimization/latest-default/correctness.json), and [environment](reports/optimization/latest-default/environment.json).
-
-The audits reconcile completed transactions with client acknowledgments; basket quantities/totals; exact nonnegative inventory decrements; confirmed Saga contents; outbox/inbox UUID and payload checksums; contiguous canonical scan sequences; and every due analytics window/ranking. They also check final-query/shutdown warnings and analytics catch-up. Passing these audits establishes correctness for the measured workloads, while the performance thresholds remain separate requirements.
-
-## Candidate deployment and latency
-
-The complete pair used five Java processes, four separate logical PostgreSQL databases on the local PostgreSQL server, and a native Apache Kafka 4.2.1 single-node KRaft broker at `127.0.0.1:19092`. Replication factor was 1. Command topics had four partitions and one command poller per business service; reply and scan topics had one partition each. Fetch waits were 500 ms with `fetch.min.bytes=1`; command poll timeout was 100 ms.
-
-Each service used `-Xms64m -Xmx256m -XX:TieredStopAtLevel=4`. Database pools were Catalog 8, Checkout 16, Inventory 8 and Analytics 8; Checkout allowed 64 outstanding Inventory commands. Scan batching was enabled with queue capacity 512 and maximum batch size 64. `KAFKA_PERFORMANCE_LOG` was enabled for this diagnostic pair. The dataset contained 2,000 SKUs and 1,000,000 starting units per SKU. PostgreSQL `synchronous_commit` and `fsync` remained on, `commit_delay` was 0, and the pair inherited `en_US.UTF-8` database locale. The later Default-only experiment used temporary databases with locale `C`.
-
-| Paired candidate workload | Actual seconds | Scans | START mean ms | SCAN mean ms | COMPLETE mean ms | COMPLETE P95 / P99 ms |
+| Current workload | Actual seconds | Scans | START mean ms | SCAN mean ms | COMPLETE mean ms | COMPLETE P95 / P99 ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Default | 60.10142 | 54,127 | 5.30 | 8.81 | 18.86 | 43.44 / 83.39 |
-| Stress | 120.67958 | 158,956 | 12.79 | 70.49 | 41.79 | 114.23 / 202.90 |
+| Default: 10 stations / 60 requested seconds | 60.04483 | 166,198 | 2.285 | 2.786 | 6.343 | 10.122 / 17.422 |
+| Stress: 100 stations / 120 requested seconds | 120.90086 | 363,959 | 5.606 | 31.428 | 12.409 | 28.613 / 47.650 |
 
-Scan latency still dominates the Stress transaction cycle: a basket averages about 10.5 scans. These are single local runs under different background load and deployment conditions. The combined changes and native broker cannot be assigned separate causal speedup figures from this pair.
+The original client sources match the historical Microservices client SHA-256 hashes. Only its server URL and report directory change; basket sizes remain 1–20. The two submitted JSON files are byte-for-byte copies of the original outputs. Their service JAR hashes match the current files and recovery validation.
 
-## Findings and implemented changes
+## Bottlenecks and retained changes
 
-- The initial command inbox used several SQL calls and an explicit transaction for each scan. START/SCAN now persist successful command results together with business writes in atomic SQL. Duplicate command IDs still fence concurrent replay, and a losing statement rolls back its writes before reading the saved winner.
-- The initial command poller processed one request at a time while waiting for business work and reply publication. Polling now dispatches independent keys to virtual-thread handlers. Per-partition offset tracking commits only a completed prefix after correlated replies receive broker acknowledgment, retaining failed work for replay.
-- JFR identified substantial allocation from frequent empty fetches and many Kafka consumers. Defaults now use one command poller per service, four request partitions and the normal 500 ms empty-fetch wait with a one-byte minimum. Available messages can satisfy that minimum immediately. Stage diagnostics default off for normal runs.
-- Database diagnostics identified contention around durable WAL flushes. `ScanWriter` coalesces already queued scans from up to 64 independent baskets in one durable statement without an intentional collection delay. Invalid baskets get individual errors, and an aborted batch falls back to the original command IDs. The later SQL change removes redundant joins; current throughput still requires a complete measured pair. See [ADR 0004](docs/adr/0004-durable-batched-scans.md).
-- The runner now compares against the previous Microservices reports, separately identifies the older user-provided Service-Based reference, and refuses publication unless both workloads pass their audits and both transaction count and TPS meet the Microservices thresholds.
+- The initial command inbox required several database calls per scan. START/SCAN now atomically persist business changes, outbox events and replayable command results in one statement. Successful replies still wait for the durable commit.
+- A blocking command poller serialized unrelated baskets behind business work and reply publication. Polling now dispatches independent keys asynchronously, while partition progress commits only a completed prefix after reply publication acknowledgment. Duplicate IDs fence replay.
+- JFR identified allocation from excessive consumers and frequent empty fetches. The adapter uses one command poller per service, `fetch.min.bytes=1` and a 500 ms empty-fetch ceiling. Existing data can satisfy a fetch immediately. The accepted single-process deployment uses one command partition per service.
+- `ScanWriter` coalesces already queued independent scans, without a collection delay, into one durable statement. Batch constraint failures fall back to the original command IDs; missing or closed baskets retain individual errors. A single writer remains the default.
+- Kafka request/reply values now carry the business JSON directly. Versioned headers carry correlation, operation and status metadata, removing repeated outer JSON escaping/parsing. Readers accept legacy envelopes, and replies match the incoming request format. See [ADR 0005](docs/adr/0005-opaque-kafka-payloads.md).
+- macOS was observed with Low Power Mode enabled despite AC power. The user disabled it before acceptance; both workloads record AC power and `lowpowermode=0` before and after. The runner now records these settings rather than assuming comparable host conditions.
 
-No durability setting was disabled to improve these measurements. Broker acknowledgment alone still does not complete a business request, and public HTTP completion waits for persisted Inventory/Checkout outcomes. HTTP retries cannot provide the internal Kafka request ID, so a timeout remains an unknown business outcome.
+The accepted pair combines code and deployment tuning. It is not a controlled experiment isolating the speedup of each change or of the power setting. The historical baseline did not record its power mode and used four logical databases on one PostgreSQL server. The accepted run uses four temporary PostgreSQL instances. These are local single-node measurements, not a production capacity estimate.
 
-## Current verification and interrupted run
+Experiments with two scan writers, unbatched TCP scans, PostgreSQL `wal_sync_method=fsync`, earlier tier-4 compilation and a Unix-socket database adapter did not meet both targets. The parallel-writer and native-socket production changes were reverted. Normal PostgreSQL TCP connections, the single batch writer and the default durable WAL method are retained. Earlier candidate reports remain historical in [reports/optimization](reports/optimization/README.md).
 
-The current source passed **113 tests, including 13 real-PostgreSQL tests**. Coverage includes concurrent duplicate commands, mixed batch outcomes, atomic rollback, cross-replica replay, writer queue/timeout/shutdown behavior, API boundaries and offset-prefix tracking. Real PostgreSQL tests require their documented test connection variables; otherwise those tests are skipped.
+## Accepted deployment and reproduction
 
-**Updated real-Kafka recovery integration is still pending.** [The existing validation file](reports/submission/validation.json) records the earlier 81-test implementation and its historical real-broker outage/recovery suite. It is not evidence that the latest asynchronous/batched implementation has passed that suite.
+The accepted run uses five separate Java processes; four test-owned PostgreSQL 15.19 instances with 32 MiB shared buffers each; and native Apache Kafka 4.2.1, single-node KRaft, at `127.0.0.1:19092`. The broker uses a 128–256 MiB heap, three network threads and four IO threads. Command/reply/scan topics each have one partition in this measured deployment; each business service has one command poller. Service JVMs use `-Xms64m -Xmx256m -XX:TieredStopAtLevel=1` for the short assignment runs.
 
-At approximately 04:01 on October 27, the later Stress run exhausted host disk space and PostgreSQL/Kafka stopped. It produced no valid Stress JSON/audit and is excluded from performance evidence. PostgreSQL recovered after cleanup; about 1.4 GiB remained at that point. Further load and integration tests are halted until at least **4 GiB is free**. The benchmark runner now checks that reserve before starting and monitors a 2 GiB floor during load. No failed disk-full attempt is presented as a completed measurement.
+Pools are Catalog 8, Checkout 16, Inventory 8 and Analytics 8. Checkout permits 64 outstanding Inventory requests. Scan queue capacity is 512 and maximum batch size is 64. Diagnostic stage/batch logging is off. The dataset has 2,000 SKUs and 1,000,000 initial units per SKU; temporary database locale is `C`.
 
-After restoring that reserve, run current-source verification with Kafka/PostgreSQL available:
+PostgreSQL `fsync`, `synchronous_commit` and `full_page_writes` stay on; `commit_delay=0`. Kafka uses `acks=all`, producer idempotence and replication factor 1. Internal business communication remains Kafka-only, and the external API waits for the actual business outcome.
+
+With Java, `javac`, PostgreSQL tools and the native Kafka distribution available, start the broker in one terminal:
 
 ```bash
-./mvnw package
-KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:19092 python3 scripts/test-events.py
-KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:19092 python3 scripts/benchmark-isolated.py --broker-deployment=native --publish-submission
+python3 scripts/kafka-local.py
 ```
 
-The new runs must record their own artifact hashes and results. `--publish-submission` will retain the existing formal reports if either workload is below either threshold. The user request remains open until current-source recovery validation and both audited performance targets have been completed.
+Then run the exact accepted configuration with Low Power Mode disabled and at least 4 GiB free disk space:
+
+```bash
+KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:19092 KAFKA_TOPIC_PARTITIONS=1 \
+  ./scripts/run-benchmarks.sh --broker-deployment=native --database-servers=separate \
+  --java-opts='-Xms64m -Xmx256m -XX:TieredStopAtLevel=1' --publish-submission
+```
+
+The wrapper prevents idle sleep on macOS. The original Default and Stress client parameters are unchanged. The runner owns and removes its temporary databases/servers, records actual TCP connections and configuration, and stops the workload if free disk drops below 2 GiB. Publication requires both workloads to pass all audits and both historical count/TPS thresholds.
+
+## Verification and evidence
+
+The current implementation passed **117 Java tests, including all 13 real-PostgreSQL tests, with no skips**, plus **4 Python safety tests**. Coverage includes concurrent duplicate commands, atomic rollback, mixed batch outcomes, cross-replica replay, queue/timeout/shutdown behavior, API contracts, offset-prefix tracking and new/legacy Kafka envelope compatibility.
+
+The final real-Kafka recovery suite also passed. It used a freshly initialized test-owned PostgreSQL instance and removed that instance and its four temporary databases afterward. It verified Analytics outage/catch-up, duplicate UUID replay, non-debiting scans, concurrent idempotent completion and Inventory outage with Checkout restart/Saga recovery. The native-socket experiment and its earlier failed attempt are not current submission evidence.
+
+- [Default JSON](reports/submission/report-default.json) and [Stress JSON](reports/submission/report-stress.json).
+- [Default audit](reports/submission/correctness-default.json) and [Stress audit](reports/submission/correctness-stress.json).
+- [Environment and hashes](reports/submission/environment.json), [comparison](reports/submission/comparison.json), and [verification](reports/submission/validation.json).
+- [Architecture diagram](docs/architecture.svg) and [message flows](docs/architecture.md).

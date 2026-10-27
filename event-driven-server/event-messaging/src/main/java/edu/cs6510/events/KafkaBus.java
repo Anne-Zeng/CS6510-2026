@@ -56,6 +56,7 @@ public final class KafkaBus implements MessageBus {
     private final int fetchWaitMs;
     private final int eventFetchWaitMs;
     private final int commandPollMs;
+    private final boolean headerEnvelopes;
     private final PerformanceLog performance;
     private final KafkaProducer<String, String> producer;
     private final ExecutorService commandExecutor = Executors.newVirtualThreadPerTaskExecutor();
@@ -83,6 +84,7 @@ public final class KafkaBus implements MessageBus {
         fetchWaitMs = number(environment, "KAFKA_FETCH_MAX_WAIT_MS", 500, 0, 1000);
         eventFetchWaitMs = number(environment, "KAFKA_EVENT_FETCH_MAX_WAIT_MS", 500, 0, 1000);
         commandPollMs = number(environment, "KAFKA_COMMAND_POLL_MS", 100, 10, 1000);
+        headerEnvelopes = Boolean.parseBoolean(environment.getOrDefault("KAFKA_HEADER_ENVELOPES", "true"));
         // Pollers own Kafka network connections. Business work runs separately on inexpensive virtual
         // threads, so adding stations does not require adding dozens of KafkaConsumer instances.
         int globalWorkers = number(environment, "KAFKA_CONSUMER_CONCURRENCY", 1, 1, 32);
@@ -110,7 +112,7 @@ public final class KafkaBus implements MessageBus {
             // Each instance sees replies; only the instance owning the correlation ID completes it.
             startConsumer(replies, prefix + "." + service + ".replies." + UUID.randomUUID(), "latest", records -> {
                 for (var record : records) {
-                    var response = Json.read(record.value(), CorrelatedReply.class);
+                    var response = KafkaEnvelope.reply(record);
                     var future = pending.get(response.id());
                     if (future != null) future.complete(response.reply());
                 }
@@ -161,7 +163,7 @@ public final class KafkaBus implements MessageBus {
             // A business reply proves that the request reached its consumer. Waiting for the send
             // acknowledgment first only serializes the caller behind a redundant network wait.
             long sent = performance.start();
-            producer.send(new ProducerRecord<>(topic(target + ".requests"), key, Json.write(request)), (metadata, failure) -> {
+            producer.send(KafkaEnvelope.request(topic(target + ".requests"), request, headerEnvelopes), (metadata, failure) -> {
                 performance.elapsed(operation, Stage.REQUEST_ACK, sent, failure != null);
                 if (failure != null) future.completeExceptionally(failure);
             });
@@ -190,9 +192,13 @@ public final class KafkaBus implements MessageBus {
     }
 
     private CompletableFuture<Void> publishAsync(String topic, String key, String body) {
+        return publishAsync(new ProducerRecord<>(topic, key, body));
+    }
+
+    private CompletableFuture<Void> publishAsync(ProducerRecord<String,String> record) {
         var confirmed = new CompletableFuture<Void>();
         try {
-            producer.send(new ProducerRecord<>(topic, key, body), (metadata, failure) -> {
+            producer.send(record, (metadata, failure) -> {
                 if (failure == null) confirmed.complete(null);
                 else confirmed.completeExceptionally(failure);
             });
@@ -276,7 +282,7 @@ public final class KafkaBus implements MessageBus {
                                     ? TimeUnit.MILLISECONDS.toNanos(Math.max(0, System.currentTimeMillis() - record.timestamp())) : 0;
                             commands.submit(key, () -> {
                                 long dispatchedAt = performance.start();
-                                var request = Json.read(record.value(), Request.class);
+                                var request = KafkaEnvelope.request(record);
                                 performance.observe(request.operation(), Stage.DISPATCH_QUEUE, dispatchedAt - queuedAt, false);
                                 performance.observe(request.operation(), Stage.RECORD_AGE, recordAge, false);
                                 if (!allowedReplyTopics.contains(request.replyTo()))
@@ -291,7 +297,9 @@ public final class KafkaBus implements MessageBus {
                                     performance.elapsed(request.operation(), Stage.HANDLER, handlerStarted, !handled);
                                 }
                                 long replied = performance.start();
-                                var publication = publishAsync(request.replyTo(), request.id(), Json.write(new CorrelatedReply(request.id(), reply)));
+                                // Match the caller's encoding, including retained legacy commands.
+                                var publication = publishAsync(KafkaEnvelope.reply(request.replyTo(),
+                                        new CorrelatedReply(request.id(), reply), KafkaEnvelope.hasHeaders(record)));
                                 return performance.enabled ? publication.whenComplete((ignored, failure) ->
                                         performance.elapsed(request.operation(), Stage.REPLY_ACK, replied, failure != null)) : publication;
                             }).whenComplete((ignored, failure) -> {

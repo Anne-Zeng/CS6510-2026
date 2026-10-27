@@ -1,14 +1,17 @@
 {
-  "startedAt": "2026-10-26T22:53:05.696223-07:00",
+  "startedAt": "2026-10-27T14:15:06.019322-07:00",
   "commitDelayMicros": 0,
   "commitSiblings": 5,
   "catalogSize": 2000,
   "initialStockPerSku": 1000000,
-  "databaseServers": "shared",
-  "sharedBuffersPerTemporaryServer": null,
+  "databaseServers": "separate",
+  "sharedBuffersPerTemporaryServer": "32MB",
+  "databaseTransport": "tcp",
+  "temporaryDatabaseLocale": "C",
+  "requestedWalSyncMethod": "default",
   "jvmOptions": [
-    "-Xms32m",
-    "-Xmx160m",
+    "-Xms64m",
+    "-Xmx256m",
     "-XX:TieredStopAtLevel=1"
   ],
   "springVirtualThreads": false,
@@ -18,10 +21,13 @@
     "analytics": 8,
     "inventory": 8
   },
-  "checkoutInventoryMaxInFlight": 8,
+  "checkoutInventoryMaxInFlight": 64,
   "wholeSagaConcurrencyCap": null,
   "inventoryMaxInFlight": 8,
-  "scanMode": "per-request local transaction with command result, basket and outbox; no application scan queue",
+  "scanMode": "atomic command result, basket and outbox; bounded coalescing of independent scans",
+  "scanBatchingEnabled": true,
+  "scanQueueCapacity": 512,
+  "scanMaxBatchSize": 64,
   "catalogReadMode": "immutable local SKU map loaded once through Kafka",
   "outboxMaxBatchesPerPoll": 10,
   "canonicalEventWrite": "atomic with inbox receipt",
@@ -29,25 +35,41 @@
   "outboxAcknowledgementSqlPerBatch": 1,
   "rankingWriteSqlPerWindow": 1,
   "broker": "Apache Kafka 4.2.1; local single-node KRaft; replication factor 1",
-  "kafkaBootstrapServers": "127.0.0.1:9092",
-  "kafkaCommandPartitions": 24,
+  "brokerDeployment": "native",
+  "kafkaBootstrapServers": "127.0.0.1:19092",
+  "kafkaCommandPartitions": 1,
   "kafkaCommandConsumersPerService": {
     "catalog": 1,
-    "checkout": 24,
+    "checkout": 1,
     "analytics": 1,
-    "inventory": 4
+    "inventory": 1
   },
+  "kafkaFetchMaxWaitMs": 500,
+  "kafkaEventFetchMaxWaitMs": 500,
+  "kafkaCommandPollMs": 100,
+  "kafkaHeaderEnvelopes": true,
+  "kafkaPerformanceLog": false,
   "kafkaRequestTimeoutMs": 8000,
   "interServiceTransport": "Kafka only; request/reply plus ItemScanned domain events",
   "commandDelivery": "at least once; durable START/SCAN command result deduplication",
   "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
   "logicalCpuCount": 8,
   "loadAverageAtStart": [
-    13.45654296875,
-    18.205078125,
-    19.09130859375
+    4.3935546875,
+    8.1640625,
+    8.9541015625
   ],
+  "powerStateAtStart": {
+    "powerSource": "Now drawing from 'AC Power'",
+    "powerModeSettings": [
+      "Battery Power:",
+      "lowpowermode         0",
+      "AC Power:",
+      "lowpowermode         0"
+    ]
+  },
   "javaVersion": "java version \"22.0.1\" 2024-04-16\nJava(TM) SE Runtime Environment (build 22.0.1+8-16)\nJava HotSpot(TM) 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)",
+  "serviceJavaVersion": "java version \"22.0.1\" 2024-04-16\nJava(TM) SE Runtime Environment (build 22.0.1+8-16)\nJava HotSpot(TM) 64-Bit Server VM (build 22.0.1+8-16, mixed mode, sharing)",
   "postgresqlVersion": "PostgreSQL 15.19 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.1.1.101), 64-bit",
   "synchronousCommit": "on",
   "loadClientSourceSha256": {
@@ -68,15 +90,75 @@
     "inventory": "27305679757ade46cc19ecd1201020e6796b1ad863f55b756624c560b1e34c2e"
   },
   "serviceJarSha256": {
-    "catalog": "52eb4d82d756befa95f349aa657ee9c1ef83c3b151539b86705f14c95f14c3ee",
-    "checkout": "957d2d9d7d3ff5f208ca6e75c6f5cd0382943aad6a723f4efec8f66467de55bf",
-    "analytics": "a8ca99b682257a5726c2d70eba5394601898777846fd57dcc4e52bca1abfe85c",
-    "inventory": "ec88c4d696152ab82625116358c1b183ef8e0f2cfea56cfd3e3f65f7f79a1d69"
+    "catalog": "919366ffad0f6ce2f53d1299b26c414fd9583cf605a13e09effed3803c2517c8",
+    "checkout": "6d5b8f50d6654eace90012addf732475d4c566725f0434efe4371f7d00b84a7c",
+    "analytics": "d5a991f5609d3d1e55071fa23e7e4ab8dc4427da4d7baf48d50f3b8fbf19151b",
+    "inventory": "b12f2cdbf1d5dc9fb966ac23d7815c1be5a99be4da28a912c268e667eb49b6b7"
   },
-  "gatewayJarSha256": "4ee92b0ddcf184a3b5e155c99d8ff804b0f31984c918bca04db0b1557c09dd0d",
-  "comparison": "Historical service-based-server/reports/submission reports; different run time and background load, one run per workload",
+  "gatewayJarSha256": "e3e2eeb633854c7748c432d2e35abf30bdc89f9cd86365b4fe7d0af952eb82a7",
+  "comparison": "Previous microservices-server/reports/submission reports; different run time/background load, same client workload and data",
+  "nativeBrokerConfiguration": {
+    "num.partitions": "8",
+    "offsets.topic.replication.factor": "1",
+    "transaction.state.log.replication.factor": "1",
+    "num.network.threads": "3",
+    "num.io.threads": "4"
+  },
+  "nativeBrokerRuntime": {
+    "jvmOptions": [
+      "-Xms128m",
+      "-Xmx256m"
+    ],
+    "networkThreads": 3,
+    "ioThreads": 4,
+    "kafkaClientJars": [
+      "kafka-clients-4.2.1.jar"
+    ]
+  },
+  "powerStateByWorkload": {
+    "default": {
+      "before": {
+        "powerSource": "Now drawing from 'AC Power'",
+        "powerModeSettings": [
+          "Battery Power:",
+          "lowpowermode         0",
+          "AC Power:",
+          "lowpowermode         0"
+        ]
+      },
+      "after": {
+        "powerSource": "Now drawing from 'AC Power'",
+        "powerModeSettings": [
+          "Battery Power:",
+          "lowpowermode         0",
+          "AC Power:",
+          "lowpowermode         0"
+        ]
+      }
+    },
+    "stress": {
+      "before": {
+        "powerSource": "Now drawing from 'AC Power'",
+        "powerModeSettings": [
+          "Battery Power:",
+          "lowpowermode         0",
+          "AC Power:",
+          "lowpowermode         0"
+        ]
+      },
+      "after": {
+        "powerSource": "Now drawing from 'AC Power'",
+        "powerModeSettings": [
+          "Battery Power:",
+          "lowpowermode         0",
+          "AC Power:",
+          "lowpowermode         0"
+        ]
+      }
+    }
+  },
   "kafkaTopicPrefixes": {
-    "stress": "eventbench_217a116ed8a3",
-    "default": "eventbench_69572073c0ef"
+    "default": "eventbench_580154830c59",
+    "stress": "eventbench_09db8d61eb5d"
   }
 }
