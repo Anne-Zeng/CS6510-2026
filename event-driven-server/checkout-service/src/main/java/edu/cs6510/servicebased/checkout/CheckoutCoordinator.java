@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.CONFLICT;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
-
+// 协调结账过程，处理库存成功、拒绝、暂时失败和恢复
 /** 功能：正常结账使用一次冻结上下文；仅持久化必要决定，恢复时重建同样上下文。 */
 @Service
 public class CheckoutCoordinator {

@@ -3,7 +3,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 import edu.cs6510.events.MessagingConfiguration;
-/** 启动 Spring Boot 应用,读取properties, 注册本服务及其子包中的组件：扫描 Catalog 自己的组件、实体和 Repository。 */
+/** 1启动 Spring Boot 应用,读取properties, 注册本服务及其子包中的组件：扫描 Catalog 自己的组件、实体和 Repository。 */
 @SpringBootApplication
 @Import(MessagingConfiguration.class)
 public class CatalogApplication {

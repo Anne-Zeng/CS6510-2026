@@ -7,7 +7,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-
+//将业务JSON 放在消息 value 中，将请求 ID、操作名等元数据放在 Kafka headers 中，减少反复包装和解析 JSON 的开销
 /** Keep business JSON opaque: correlation metadata belongs in Kafka headers.
  * Readers also accept the original JSON envelope so retained commands can replay.
  */

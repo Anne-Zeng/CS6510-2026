@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
-
+//将并发到达的扫描请求放入队列，合并数据库写入，等待提交结果
 /**
  * Coalesce scans already waiting for PostgreSQL, without adding a batching delay.
  * A caller receives success only after its basket, outbox and command response

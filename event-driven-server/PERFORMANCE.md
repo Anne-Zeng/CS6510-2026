@@ -1,16 +1,14 @@
 # Kafka performance and correctness
 
-**Both transaction-count and TPS targets are achieved.** The accepted run is `reports/load-20261027-141505`, October 27, 2026, America/Los_Angeles. The current artifacts, original Load Client, audits and recovery validation are recorded in [reports/submission](reports/submission/README.md).
+The accepted run is `reports/load-20261027-141505`, October 27, 2026, America/Los_Angeles. The current artifacts, original Load Client, audits and recovery validation are recorded in [reports/submission](reports/submission/README.md).
 
 ## Accepted results
 
 | Implementation | Default transactions / TPS | Stress transactions / TPS |
 | --- | ---: | ---: |
-| Previous Microservices formal baseline | 11,031 / 183.74143 | 31,431 / 261.68576 |
-| Initial Kafka reports, October 26 | 426 / 6.91103 | 1,501 / 11.94916 |
 | Current Kafka submission | **15,866 / 264.23591** | **34,625 / 286.39168** |
 
-Current TPS exceeds the Microservices baseline by **43.81% in Default** and **9.44% in Stress**. Both transaction counts also exceed their targets. Both workloads have zero request errors and pass all 17 independent database audits each.
+Both workloads have zero request errors and pass all 17 independent database audits each.
 
 | Current workload | Actual seconds | Scans | START mean ms | SCAN mean ms | COMPLETE mean ms | COMPLETE P95 / P99 ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -28,9 +26,9 @@ The original client sources match the historical Microservices client SHA-256 ha
 - Kafka request/reply values now carry the business JSON directly. Versioned headers carry correlation, operation and status metadata, removing repeated outer JSON escaping/parsing. Readers accept legacy envelopes, and replies match the incoming request format. See [ADR 0005](docs/adr/0005-opaque-kafka-payloads.md).
 - macOS was observed with Low Power Mode enabled despite AC power. The user disabled it before acceptance; both workloads record AC power and `lowpowermode=0` before and after. The runner now records these settings rather than assuming comparable host conditions.
 
-The accepted pair combines code and deployment tuning. It is not a controlled experiment isolating the speedup of each change or of the power setting. The historical baseline did not record its power mode and used four logical databases on one PostgreSQL server. The accepted run uses four temporary PostgreSQL instances. These are local single-node measurements, not a production capacity estimate.
+The accepted pair combines code and deployment tuning. It is not a controlled experiment isolating the speedup of each change or of the power setting. The accepted run uses four temporary PostgreSQL instances, with AC power and Low Power Mode disabled. These are local single-node measurements, not a production capacity estimate.
 
-Experiments with two scan writers, unbatched TCP scans, PostgreSQL `wal_sync_method=fsync`, earlier tier-4 compilation and a Unix-socket database adapter did not meet both targets. The parallel-writer and native-socket production changes were reverted. Normal PostgreSQL TCP connections, the single batch writer and the default durable WAL method are retained. Earlier candidate reports remain historical in [reports/optimization](reports/optimization/README.md).
+Experiments with two scan writers, unbatched TCP scans, PostgreSQL `wal_sync_method=fsync`, earlier tier-4 compilation and a Unix-socket database adapter were not selected for the accepted configuration. The parallel-writer and native-socket production changes were reverted. Normal PostgreSQL TCP connections, the single batch writer and the default durable WAL method are retained. Earlier candidate reports remain historical in [reports/optimization](reports/optimization/README.md).
 
 ## Accepted deployment and reproduction
 
@@ -40,7 +38,7 @@ Pools are Catalog 8, Checkout 16, Inventory 8 and Analytics 8. Checkout permits 
 
 PostgreSQL `fsync`, `synchronous_commit` and `full_page_writes` stay on; `commit_delay=0`. Kafka uses `acks=all`, producer idempotence and replication factor 1. Internal business communication remains Kafka-only, and the external API waits for the actual business outcome.
 
-With Java, `javac`, PostgreSQL tools and the native Kafka distribution available, start the broker in one terminal:
+Run the following commands from `event-driven-server/`. With Java, `javac`, PostgreSQL tools and the native Kafka distribution available, start the broker in one terminal:
 
 ```bash
 python3 scripts/kafka-local.py

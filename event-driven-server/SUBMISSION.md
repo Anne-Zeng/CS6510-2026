@@ -11,7 +11,7 @@ This implementation preserves the existing five deployable modules: Gateway, Cat
 | Microservices and event broker diagram | [architecture.svg](docs/architecture.svg), with detailed [message flows](docs/architecture.md) |
 | Source repository | Submit the URL of this repository containing `event-driven-server/` and the selected evidence |
 
-Both reports were generated against this Kafka implementation on October 26, 2026 and passed all 17 correctness checks. See [PERFORMANCE.md](PERFORMANCE.md) for measured counts, latency, configuration and limits. Reports from earlier architectural versions are not Kafka benchmark evidence.
+Both reports were generated against this Kafka implementation on October 27, 2026 (America/Los_Angeles), and each passed all 17 correctness checks. See [PERFORMANCE.md](PERFORMANCE.md) for measured counts, latency, configuration and limits. Reports from earlier architectural versions are not Kafka benchmark evidence.
 
 ## Implemented architecture
 
@@ -27,22 +27,30 @@ The local broker has a single KRaft node and replication factor 1. It demonstrat
 
 ## Reproduce
 
-From `event-driven-server/`, configure PostgreSQL and `.env` using [README.md](README.md):
+Run these commands from `event-driven-server/`. Install Java 21, `javac` and PostgreSQL tools, and prepare the native Kafka distribution as described in [README.md](README.md). Keep PostgreSQL available for the runner's initial environment checks. Disable Low Power Mode on macOS and ensure at least 4 GiB of free disk space.
+
+Build the service JARs:
 
 ```bash
-docker compose up -d --wait
-cp .env.example .env
-# Fill in four dedicated event_* database URLs, users and passwords.
 ./mvnw package
-./run.sh
 ```
 
-For formal reports, the benchmark runner manages its own service processes and temporary databases:
+Start Kafka in one terminal and keep it running:
 
 ```bash
-python3 scripts/benchmark-isolated.py --publish-submission
+python3 scripts/kafka-local.py
 ```
+
+After `Kafka Server started` appears, run the accepted benchmark configuration in a second terminal. The runner starts its own five service processes and four temporary PostgreSQL instances; do not start `./run.sh` alongside it.
+
+```bash
+KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:19092 KAFKA_TOPIC_PARTITIONS=1 \
+  ./scripts/run-benchmarks.sh --broker-deployment=native --database-servers=separate \
+  --java-opts='-Xms64m -Xmx256m -XX:TieredStopAtLevel=1' --publish-submission
+```
+
+Results are written to `reports/load-<timestamp>/`. The `--publish-submission` option updates `reports/submission/` only after validation succeeds. Omit that option for an exploratory run that keeps the submitted reports unchanged. See [PERFORMANCE.md](PERFORMANCE.md) for full deployment settings and validation details; see [README.md](README.md) for normal interactive service startup.
 
 The runner invokes the unchanged Load Client once with default workload parameters and once with `--stations=100 --duration=120`, with only endpoint/report-output options added. It preserves raw JSON and performs independent database correctness audits before publishing both reports. The local test database account needs database creation/cleanup access; use `SAGA_TEST_DB_USER` and `SAGA_TEST_DB_PASSWORD` when necessary.
 
-The current implementation passed 117 Java tests (including 13 real-PostgreSQL tests with no skips), 4 Python safety tests and the real-Kafka outage/replay/restart suite using a test-owned PostgreSQL instance. Both required workloads have zero request errors, pass all 34 database audits and exceed the previous Microservices transaction/TPS targets: Default 15,866 / 264.23591 TPS; Stress 34,625 / 286.39168 TPS. See [validation.json](reports/submission/validation.json) and [PERFORMANCE.md](PERFORMANCE.md). Do not commit `.env`, credentials, generated JARs or runtime logs.
+The current implementation passed 117 Java tests (including 13 real-PostgreSQL tests with no skips), 4 Python safety tests and the real-Kafka outage/replay/restart suite using a test-owned PostgreSQL instance. Both required workloads have zero request errors, pass all 34 database audits with these measured results: Default 15,866 / 264.23591 TPS; Stress 34,625 / 286.39168 TPS. See [validation.json](reports/submission/validation.json) and [PERFORMANCE.md](PERFORMANCE.md). Do not commit `.env`, credentials, generated JARs or runtime logs.

@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/** 已经加载到内存的目录, 保存按 SKU 查询的商品快照, 调用 Repository 加载数据. 功能：每个进程各自缓存不可变目录；缓存数据来源是Catalog 私有数据库。 */
+/** 从本服务数据库加载到内存的目录, 保存按 SKU 查询的商品快照, 调用 Repository 加载数据. 功能：每个进程各自缓存不可变目录；缓存数据来源是Catalog 私有数据库。 */
 @Component
 public class CatalogCache {
 

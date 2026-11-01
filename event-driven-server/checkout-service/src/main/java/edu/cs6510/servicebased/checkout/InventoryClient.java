@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
+//通过 Kafka 请求库存操作，并限制并发请求数量
 /** Inventory command/result messages travel through Kafka. A timeout is an unknown
  * result: the durable saga retries with the same attempt ID rather than cancelling.
  */

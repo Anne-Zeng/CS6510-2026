@@ -1,7 +1,7 @@
 package edu.cs6510.servicebased.checkout.contract;
 
 import java.math.BigDecimal;
-
+//Checkout 使用的单个商品数据
 /** 功能：商品目录中的一项：SKU、名称和精确到分的单价。 */
 
 public record CatalogItemResponse(

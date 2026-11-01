@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.CONFLICT;
 import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.NOT_FOUND;
-
+// 保存 Kafka 命令执行结果，使相同命令 ID 重放时返回原结果
 /**
  * A command's basket writes, outbox event and replayable response are one atomic
  * PostgreSQL statement. Normal START/SCAN takes one database round trip and one

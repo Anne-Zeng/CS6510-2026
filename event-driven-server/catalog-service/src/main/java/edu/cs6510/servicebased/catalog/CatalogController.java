@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+//4保留的 HTTP 接口入口，供兼容、诊断或测试使用
 /** 定义 GET /items	调用 CatalogService: 保留负载客户端使用的 GET /items 接口。 */
 @RestController
 @RequestMapping("/items")

@@ -5,7 +5,7 @@ import jakarta.validation.Validator;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 import java.util.function.Supplier;
-
+//把业务返回值或异常转换成统一的 Reply，并提供参数验证辅助
 /** Maps local domain outcomes to the unchanged external API contract, without making HTTP calls. */
 public final class Responses {
     private Responses() {}

@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.*;
-
+//保存结账尝试、状态、处理租约及恢复所需上下文
 /** 功能：冻结时一次读购物篮；每个 Saga 步骤是一条自动提交 SQL，租约与业务状态一起提交，网络等待不占数据库事务。 */
 @Repository
 public class SagaStore {

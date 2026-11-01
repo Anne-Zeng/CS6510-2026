@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.NOT_FOUND;
-
+//通过 Kafka 获取商品目录并缓存；扫描时查缓存中的商品价格等信息
 /** Catalog owns the data; Checkout loads an immutable snapshot through Kafka.
  * The assignment catalog is fixed after initialization. Restart to refresh it.
  */
@@ -18,6 +18,7 @@ import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.NOT
 public class CatalogClient {
  private final MessageBus bus;
  private volatile Map<String,CatalogItemResponse> bySku=Map.of();
+ //构造器依赖注入，保存Kafka bus对象引用，CatalogClient 以后通过 this.bus 发送消息
  public CatalogClient(MessageBus bus) { this.bus=bus; }
  public CatalogItemResponse find(String sku) {
   var snapshot=bySku;

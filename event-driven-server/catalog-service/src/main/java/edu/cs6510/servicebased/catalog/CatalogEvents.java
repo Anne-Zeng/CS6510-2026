@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
+//2注册 Catalog 的 Kafka 请求处理，处理 GET_CATALOG
 /** Kafka is the only transport used by Gateway and Checkout to obtain catalog data. */
 @Component
 public class CatalogEvents {

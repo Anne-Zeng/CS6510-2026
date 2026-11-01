@@ -1,7 +1,7 @@
 package edu.cs6510.servicebased.checkout.contract;
 
 import java.math.BigDecimal;
-
+//收据中的一行商品
 /** 功能：收据中的商品明细；同一商品通过 quantity 汇总数量。 */
 
 public record ReceiptLine(

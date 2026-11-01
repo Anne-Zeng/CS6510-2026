@@ -8,7 +8,7 @@ import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.INV
 import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.UUID;
-
+// 交易业务方法，校验输入、准备商品数据、查询交易、调用结账协调器
 /** 功能：远程商品查询在本地数据库事务之外执行，避免网络等待占用事务连接。 */
 @Service
 public class TransactionService {

@@ -4,7 +4,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import edu.cs6510.events.MessagingConfiguration;
 import org.springframework.context.annotation.Import;
-/** 功能：只扫描 Checkout 自己的组件，不加载共享实体和 Repository。 */
+/** 启动 Checkout 功能：只扫描 Checkout 自己的组件，不加载共享实体和 Repository。 */
 @SpringBootApplication
 @EnableScheduling
 @Import(MessagingConfiguration.class)

@@ -5,6 +5,7 @@ import edu.cs6510.servicebased.catalog.contract.CatalogResponse;
 import edu.cs6510.servicebased.catalog.persistence.CatalogCache;
 import org.springframework.stereotype.Service;
 
+//3提供商品目录业务方法，组装响应
 /** 功能：将Catalog 私有数据库的只读目录快照转换为客户端 API 响应。调用 CatalogCache */
 @Service
 public class CatalogService {

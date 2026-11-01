@@ -34,6 +34,7 @@ import edu.cs6510.events.MessageBus;
 import edu.cs6510.events.Reply;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+//接收 HTTP请求、匹配路由、转换为 Kafka 请求，再将响应转换回 HTTP
 /** Public synchronous HTTP ingress. Every business operation crosses Kafka before returning a response.
  * Each keepalive connection runs on a virtual thread; the gateway has no business state or database. */
 public final class GatewayServer implements AutoCloseable {
@@ -179,15 +180,18 @@ public final class GatewayServer implements AutoCloseable {
         try {
             if ("/items".equals(path)) {
                 if (!"GET".equals(method)) return methodNotAllowed();
+                //获取商品目录
                 return relay(bus.request("catalog", "GET_CATALOG", uniqueKey(), "{}"));
             }
-            if ("/transactions".equals(path)) {
+            if ("/transactions".equals(path)) {//Gateway 把 HTTP 请求映射为操作名，KafkaBus 发送消息，Checkout 收到消息后，再由 CheckoutMessages 按操作名分派处理。
                 if (!"POST".equals(method)) return methodNotAllowed();
+                //开始交易
                 return relay(bus.request("checkout", "START_TRANSACTION", uniqueKey(), body));
             }
             if ("/inventory/low-stock".equals(path)) {
                 if (!"GET".equals(method)) return methodNotAllowed();
                 Integer threshold = queryInteger(uri, "threshold");
+                //查询低库存
                 return relay(bus.request("inventory", "GET_LOW_STOCK", uniqueKey(),
                         Json.write(new LowStockQuery(threshold))));
             }
@@ -199,6 +203,7 @@ public final class GatewayServer implements AutoCloseable {
                 if (checkpoint.status() != 200) return relay(checkpoint);
                 Object count = Json.read(checkpoint.body(), Map.class).get("totalScans");
                 if (!(count instanceof Number)) throw new IllegalStateException("Invalid scan checkpoint reply");
+                //查询热门商品
                 return relay(bus.request("analytics", "GET_POPULAR_ITEMS", uniqueKey(),
                         Json.write(new PopularItemsQuery(limit, ((Number) count).longValue()))));
             }
@@ -208,14 +213,17 @@ public final class GatewayServer implements AutoCloseable {
                 if (transactionId == null) return json(404, UNKNOWN_ROUTE);
                 if (parts.length == 3) {
                     if (!"GET".equals(method)) return methodNotAllowed();
+                    //查询交易
                     return relay(bus.request("checkout", "GET_TRANSACTION", transactionId, "{}"));
                 }
                 if ("items".equals(parts[3])) {
                     if (!"POST".equals(method)) return methodNotAllowed();
-                    return relay(bus.request("checkout", "SCAN_ITEM", transactionId, body));
+                    //扫描商品
+                    return relay(bus.request("checkout", "SCAN_ITEM", transactionId, body));//HTTP 请求怎样变成 Kafka 命令
                 }
                 if ("complete".equals(parts[3])) {
                     if (!"POST".equals(method)) return methodNotAllowed();
+                    //完成交易
                     return relay(bus.request("checkout", "COMPLETE_TRANSACTION", transactionId, "{}"));
                 }
             }

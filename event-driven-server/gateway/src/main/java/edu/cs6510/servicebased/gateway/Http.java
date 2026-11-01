@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+//HTTP 读取、响应等辅助操作
 /** HTTP/1.1 ingress framing for the public gateway; rejects ambiguous request boundaries. */
 final class Http {
     // 功能：逐跳首部只对一段连接有效，转发时必须重新生成，不能从一侧带到另一侧。

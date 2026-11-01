@@ -38,11 +38,19 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+//MessageBus 的 Kafka 实现，包含 Producer、Consumer、请求响应关联等
 /**
  * Kafka adapter for all inter-service traffic. Request/reply correlation is independent of
  * consumer threads, so Checkout can await Inventory without blocking its reply consumer.
  * Business handlers commit locally before replies/offsets. Crash redelivery is expected:
  * Checkout command_results, Inventory saga IDs and Analytics event IDs provide idempotency.
+ */
+/**
+ * 用于所有服务间通信的 Kafka 适配器。请求与响应的关联机制独立于
+ * 消费者线程，因此 Checkout 等待 Inventory 响应时，不会阻塞接收响应的消费者线程。
+ * 业务处理器先提交本地数据库事务，再发送响应并提交消费偏移量。
+ * 系统允许崩溃后重新投递消息：Checkout 的 command_results、
+ * Inventory 的 Saga ID 和 Analytics 的事件 ID 用于保证幂等性，避免重复执行。
  */
 public final class KafkaBus implements MessageBus {
     public record CorrelatedReply(String id, Reply reply) {}
@@ -198,8 +206,8 @@ public final class KafkaBus implements MessageBus {
     private CompletableFuture<Void> publishAsync(ProducerRecord<String,String> record) {
         var confirmed = new CompletableFuture<Void>();
         try {
-            producer.send(record, (metadata, failure) -> {
-                if (failure == null) confirmed.complete(null);
+            producer.send(record, (metadata, failure) -> {//发送到 Kafka
+                if (failure == null) confirmed.complete(null);//confirmed表示 broker 是否确认接收这条回复消息
                 else confirmed.completeExceptionally(failure);
             });
         } catch (RuntimeException failure) { confirmed.completeExceptionally(failure); }
@@ -269,8 +277,8 @@ public final class KafkaBus implements MessageBus {
                             });
                             lastCommit = now;
                         }
-                        var records = consumer.poll(Duration.ofMillis(commandPollMs));
-                        for (var record : records) {
+                        var records = consumer.poll(Duration.ofMillis(commandPollMs));//让消费者从 Kafka 拉取一批消息，然后逐条处理
+                        for (var record : records) {// 登记进度、安排执行、解析请求、调用业务处理函数
                             var partition = new TopicPartition(record.topic(), record.partition());
                             var state = progress.computeIfAbsent(partition, ignored -> new PartitionProgress());
                             state.dispatched(record.offset());
@@ -282,7 +290,7 @@ public final class KafkaBus implements MessageBus {
                                     ? TimeUnit.MILLISECONDS.toNanos(Math.max(0, System.currentTimeMillis() - record.timestamp())) : 0;
                             commands.submit(key, () -> {
                                 long dispatchedAt = performance.start();
-                                var request = KafkaEnvelope.request(record);
+                                var request = KafkaEnvelope.request(record);//解析消息
                                 performance.observe(request.operation(), Stage.DISPATCH_QUEUE, dispatchedAt - queuedAt, false);
                                 performance.observe(request.operation(), Stage.RECORD_AGE, recordAge, false);
                                 if (!allowedReplyTopics.contains(request.replyTo()))
@@ -291,13 +299,13 @@ public final class KafkaBus implements MessageBus {
                                 Reply reply;
                                 boolean handled = false;
                                 try {
-                                    reply = handler.apply(request);
+                                    reply = handler.apply(request);//调用先前注册的 CheckoutMessages.handle(request)
                                     handled = true;
                                 } finally {
                                     performance.elapsed(request.operation(), Stage.HANDLER, handlerStarted, !handled);
                                 }
                                 long replied = performance.start();
-                                // Match the caller's encoding, including retained legacy commands.
+                                // Match the caller's encoding, including retained legacy commands.将 Reply 再发送到 Kafka
                                 var publication = publishAsync(KafkaEnvelope.reply(request.replyTo(),
                                         new CorrelatedReply(request.id(), reply), KafkaEnvelope.hasHeaders(record)));
                                 return performance.enabled ? publication.whenComplete((ignored, failure) ->

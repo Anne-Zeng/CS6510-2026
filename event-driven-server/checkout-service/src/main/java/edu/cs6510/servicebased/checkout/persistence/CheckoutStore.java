@@ -17,7 +17,7 @@ import java.util.List;
 
 import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.CONFLICT;
 import static edu.cs6510.servicebased.checkout.common.BusinessException.Kind.NOT_FOUND;
-
+//购物篮、交易明细及收据相关数据库操作
 /** 功能：封装 Checkout 私有数据库 SQL；减少网络往返，并保留数据库事务和行锁保护。 */
 @Repository
 @Transactional(propagation = Propagation.MANDATORY)

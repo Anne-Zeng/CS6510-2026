@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/** 功能：保持原 load client 使用的交易 URL 和响应状态码不变。 */
+/** HTTP 业务入口 功能：保持原 load client 使用的交易 URL 和响应状态码不变。 */
 @RestController
 @RequestMapping("/transactions")
 public class TransactionController {

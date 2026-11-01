@@ -3,7 +3,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-
+// 访问待发送扫描事件及其发送状态
 /** Checkout-private outbox. Never hold database locks while waiting for Kafka. */
 @Repository
 public class OutboxStore {

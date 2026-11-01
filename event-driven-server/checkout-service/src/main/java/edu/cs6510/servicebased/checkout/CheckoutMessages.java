@@ -16,7 +16,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import java.util.Map;
-
+//Kafka 业务入口，按 operation 分派请求
 /** Kafka entry point for Gateway. Success waits for the actual local operation,
  * including durable Inventory confirmation when completing a transaction.
  */
@@ -32,8 +32,8 @@ public class CheckoutMessages {
   this.bus=bus;this.checkout=checkout;this.validator=validator;this.outbox=outbox;this.inbox=inbox;this.scans=scans;
  }
  @EventListener(ApplicationReadyEvent.class)
- public void start() { bus.serve("checkout",this::handle); }
- Reply handle(Request request) {
+ public void start() { bus.serve("checkout",this::handle); }//收到发给 Checkout 的请求时使用handle()方法处理
+ Reply handle(Request request) {//按操作名分派业务处理
   return switch(request.operation()) {
    case "START_TRANSACTION" -> start(request);
    case "GET_TRANSACTION" -> Responses.call(()->checkout.getTransaction(request.key()));

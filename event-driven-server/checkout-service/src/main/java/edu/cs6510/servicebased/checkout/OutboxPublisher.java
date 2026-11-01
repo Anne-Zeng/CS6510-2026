@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+// 后台读取 Outbox，经 AnalyticsClient 发给 Kafka，收到 broker 确认后更新状态
 /** At-least-once publication: acknowledge the outbox only after Kafka broker ack.
  * A crash between broker ack and the update republishes the same event UUIDs;
  * Analytics deduplicates them with its transactional inbox.
