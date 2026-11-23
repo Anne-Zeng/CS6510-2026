@@ -1,0 +1,145 @@
+{
+  "checks": {
+    "default": "passed",
+    "stress": "passed"
+  },
+  "runs": {
+    "default": {
+      "runDirectory": "target/notification-test-a736b26880",
+      "sourceClientReport": "report-20261123-014016.json",
+      "powerConditions": [
+        {
+          "source": "AC Power",
+          "low_power_mode": 0
+        }
+      ],
+      "diagnostics": {
+        "metrics-audit.json": {
+          "passed": true,
+          "actual": {
+            "sales": 5332,
+            "pending": 0,
+            "subscribers": 100,
+            "notifications": 2524798,
+            "send_attempts": 2524798
+          },
+          "counters": {
+            "sales": 5332,
+            "pending": 0,
+            "subscribers": 100,
+            "notifications": 2524798,
+            "send_attempts": 2524798
+          }
+        },
+        "clock-safety-final.json": {
+          "wall_seconds": 430.4501187801361,
+          "monotonic_seconds": 430.4732373750012,
+          "clock_divergence_seconds": -0.023118594865081832,
+          "sleep_guard_required": true,
+          "sleep_guard_alive": true,
+          "power_conditions": [
+            {
+              "source": "AC Power",
+              "low_power_mode": 0
+            }
+          ],
+          "power_stable": true,
+          "valid": true,
+          "note": "Temporary idle/system sleep assertion on macOS; forced sleep or clock adjustment can still invalidate timing."
+        },
+        "storage-snapshot.json": {
+          "shared_items": 50221,
+          "deliveries": 2524798,
+          "sample_limit": 1024,
+          "sample_rows": 1024,
+          "row_sizes": {
+            "compact_row_bytes": 75.9970703125,
+            "legacy_equivalent_row_bytes": 188.0
+          },
+          "relation_bytes": {
+            "shared_items": 12845056,
+            "delivery_state": 689790976
+          }
+        }
+      }
+    },
+    "stress": {
+      "runDirectory": "target/notification-test-15b1c6775d",
+      "sourceClientReport": "report-20261122-220523.json",
+      "powerConditions": [
+        {
+          "source": "Battery Power",
+          "low_power_mode": 0
+        }
+      ],
+      "diagnostics": {
+        "metrics-audit.json": {
+          "passed": true,
+          "actual": {
+            "sales": 24957,
+            "pending": 0,
+            "subscribers": 100,
+            "notifications": 11785116,
+            "send_attempts": 11785116
+          },
+          "counters": {
+            "sales": 24957,
+            "pending": 0,
+            "subscribers": 100,
+            "notifications": 11785116,
+            "send_attempts": 11785116
+          }
+        },
+        "clock-safety-final.json": {
+          "wall_seconds": 765.9219739437103,
+          "monotonic_seconds": 765.9495393750112,
+          "clock_divergence_seconds": -0.027565431300899945,
+          "sleep_guard_required": true,
+          "sleep_guard_alive": true,
+          "power_conditions": [
+            {
+              "source": "Battery Power",
+              "low_power_mode": 0
+            }
+          ],
+          "power_stable": true,
+          "valid": true,
+          "note": "Temporary idle/system sleep assertion on macOS; forced sleep or clock adjustment can still invalidate timing."
+        },
+        "storage-snapshot.json": {
+          "shared_items": 234426,
+          "deliveries": 11785116,
+          "sample_limit": 1024,
+          "sample_rows": 1024,
+          "row_sizes": {
+            "compact_row_bytes": 75.9970703125,
+            "legacy_equivalent_row_bytes": 188.0
+          },
+          "relation_bytes": {
+            "shared_items": 59408384,
+            "delivery_state": 2902556672
+          }
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "report-default.json": {
+      "sha256": "8bf8f691b7f33dccfd06c6461eebb95be46a8bdf9fbed7564d8a24e523cb6083",
+      "source": "target/notification-test-a736b26880/load-report/report-20261123-014016.json"
+    },
+    "correctness-default.json": {
+      "sha256": "6be893a0689290331ab3a2f05baa3304463fc7624979dfd93b9db9ce0cc3613f",
+      "source": "target/notification-test-a736b26880/verification.json"
+    },
+    "report-stress.json": {
+      "sha256": "5c194aec6c95d0a91c0e94f90c5fe3f15530a5b506d0ce28019eb6615c5b4229",
+      "source": "target/notification-test-15b1c6775d/load-report/report-20261122-220523.json"
+    },
+    "correctness-stress.json": {
+      "sha256": "73f3f332a3274d28d7c3058e4655460be479fb06368197ae095d4a7b4ae61e89",
+      "source": "target/notification-test-15b1c6775d/verification.json"
+    }
+  },
+  "note": "Evidence consistency checked; no new load test executed during report preparation."
+}
