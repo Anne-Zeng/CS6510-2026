@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!-- Public HTTP ingress; all upstream traffic uses the shared Kafka adapter. -->
+    <parent>
+        <groupId>edu.cs6510</groupId>
+        <artifactId>event-driven-server</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>gateway</artifactId>
+    <name>HTTP to Kafka Gateway</name>
+    <dependencies>
+        <dependency>
+            <groupId>edu.cs6510</groupId>
+            <artifactId>event-messaging</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- Exercise the real public HTTP listener against a fake message bus. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>edu.cs6510.servicebased.gateway.GatewayMain</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

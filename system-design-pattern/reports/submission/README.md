@@ -2,7 +2,7 @@
 
 ## Video
 
-The demonstration video has been recorded. Its accessible submission URL has not yet been supplied; add the actual URL before submitting the assignment. No video URL is fabricated here.
+[Watch the Notification Service demonstration on Panopto](https://northeastern.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=d9df3ffb-0ff4-4167-bb20-b50b00a1ea41). The URL was supplied by the author; instructor playback permissions have not been independently verified.
 
 ## Design and requirements
 

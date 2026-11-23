@@ -1,0 +1,258 @@
+{
+  "passed": true,
+  "checks": {
+    "same_workload_and_notification_count": true,
+    "all_correctness_checks_passed": true,
+    "median_tps_not_lower": true,
+    "median_p95_lower": true
+  },
+  "notifications_per_run": 300250,
+  "baseline_medians": {
+    "tps": 93.58542241007099,
+    "p50_ms": 10109.98,
+    "p95_ms": 16151.439999999999,
+    "elapsed_seconds": 33.295
+  },
+  "candidate_medians": {
+    "tps": 97.55004418307237,
+    "p50_ms": 9491.7,
+    "p95_ms": 15737.3,
+    "elapsed_seconds": 35.17
+  },
+  "baseline_runs": [
+    {
+      "run": "target/notification-test-6685a977ba",
+      "plan": {
+        "sales": 600,
+        "items_per_sale": 10,
+        "stations": 10,
+        "plan_sha256": "ca1de290bf18f4f45f01418f3cf9b381556c3e22fda68860b3d73d9bf7bd4278",
+        "driver": "fixed-workload-v1 (not the original load-client)"
+      },
+      "notifications": 300250,
+      "tps": 92.88594003733824,
+      "p50_ms": 9815.72,
+      "p95_ms": 15865.37,
+      "elapsed_seconds": 33.12,
+      "settings": {
+        "NOTIFICATION_DISPATCH_DB_CONCURRENCY": "1",
+        "NOTIFICATION_DISPATCH_BATCH_SIZE": "512",
+        "NOTIFICATION_INGEST_BATCH_SIZE": "16",
+        "NOTIFICATION_DISPATCH_CUSTOM_PLAN": "true"
+      },
+      "environment": {
+        "variant": "notification",
+        "catalogSize": 2000,
+        "initialStockPerSku": 1000000,
+        "databaseServers": "separate",
+        "sharedBuffersPerInstance": "32MB",
+        "fsync": true,
+        "synchronous_commit": true,
+        "jvmOptions": "-Xms64m -Xmx256m -XX:TieredStopAtLevel=1",
+        "subscribers": 100,
+        "diagnosticsEnabled": true,
+        "subscriptionPolicy": "even users all SKUs; odd users one SKU",
+        "clientSourceHashes": {
+          "ApiClient.java": "dcf870f04b768c15a733a67e00f7385aec91b8ebb4688c52326febe910b92550",
+          "CatalogItem.java": "8a1aafa055f9e21a3428eb59064de2a31fb0a1b97547f04d3098e80d8ead86b3",
+          "Config.java": "1e5bbf39e6c4e2a856e75d81302ce67955d316112627a4f9c20f04421c34c5a0",
+          "ItemSampler.java": "53499d3aea32e6cc817474b777379418708f87a44eb0f4242d5a8d6125048515",
+          "Json.java": "05e846c03f36d6690e6fc1bb9226daad773b02b494bf86398c2bb7d5b4e81ba6",
+          "Main.java": "e8cd788d420a0f4072226147bce20616b0bd0a6bbf86193aa16175e436f244cd",
+          "Metrics.java": "9f786914be0562a24bd4fa165f8a4c13b47399989d52d8d92f8992d1162fd86c",
+          "ReportWriter.java": "d3b5c20836acedd2e0fa3b97862b7c2967c5c57aa2d1b8b4a2c36d83e08999a0",
+          "StationWorker.java": "074bf7c9394cd81f92dde80a9de2df0cd67798f1630ba069a85c1a5502491386"
+        }
+      }
+    },
+    {
+      "run": "target/notification-test-6533c80dda",
+      "plan": {
+        "sales": 600,
+        "items_per_sale": 10,
+        "stations": 10,
+        "plan_sha256": "ca1de290bf18f4f45f01418f3cf9b381556c3e22fda68860b3d73d9bf7bd4278",
+        "driver": "fixed-workload-v1 (not the original load-client)"
+      },
+      "notifications": 300250,
+      "tps": 94.28490478280374,
+      "p50_ms": 10404.24,
+      "p95_ms": 16437.51,
+      "elapsed_seconds": 33.47,
+      "settings": {
+        "NOTIFICATION_DISPATCH_DB_CONCURRENCY": "1",
+        "NOTIFICATION_DISPATCH_BATCH_SIZE": "512",
+        "NOTIFICATION_INGEST_BATCH_SIZE": "16",
+        "NOTIFICATION_DISPATCH_CUSTOM_PLAN": "true"
+      },
+      "environment": {
+        "variant": "notification",
+        "catalogSize": 2000,
+        "initialStockPerSku": 1000000,
+        "databaseServers": "separate",
+        "sharedBuffersPerInstance": "32MB",
+        "fsync": true,
+        "synchronous_commit": true,
+        "jvmOptions": "-Xms64m -Xmx256m -XX:TieredStopAtLevel=1",
+        "subscribers": 100,
+        "diagnosticsEnabled": true,
+        "subscriptionPolicy": "even users all SKUs; odd users one SKU",
+        "clientSourceHashes": {
+          "ApiClient.java": "dcf870f04b768c15a733a67e00f7385aec91b8ebb4688c52326febe910b92550",
+          "CatalogItem.java": "8a1aafa055f9e21a3428eb59064de2a31fb0a1b97547f04d3098e80d8ead86b3",
+          "Config.java": "1e5bbf39e6c4e2a856e75d81302ce67955d316112627a4f9c20f04421c34c5a0",
+          "ItemSampler.java": "53499d3aea32e6cc817474b777379418708f87a44eb0f4242d5a8d6125048515",
+          "Json.java": "05e846c03f36d6690e6fc1bb9226daad773b02b494bf86398c2bb7d5b4e81ba6",
+          "Main.java": "e8cd788d420a0f4072226147bce20616b0bd0a6bbf86193aa16175e436f244cd",
+          "Metrics.java": "9f786914be0562a24bd4fa165f8a4c13b47399989d52d8d92f8992d1162fd86c",
+          "ReportWriter.java": "d3b5c20836acedd2e0fa3b97862b7c2967c5c57aa2d1b8b4a2c36d83e08999a0",
+          "StationWorker.java": "074bf7c9394cd81f92dde80a9de2df0cd67798f1630ba069a85c1a5502491386"
+        }
+      }
+    }
+  ],
+  "candidate_runs": [
+    {
+      "run": "target/notification-test-71c246a7fd",
+      "plan": {
+        "sales": 600,
+        "items_per_sale": 10,
+        "stations": 10,
+        "plan_sha256": "ca1de290bf18f4f45f01418f3cf9b381556c3e22fda68860b3d73d9bf7bd4278",
+        "driver": "fixed-workload-v1 (not the original load-client)"
+      },
+      "notifications": 300250,
+      "tps": 97.55004418307237,
+      "p50_ms": 9160.76,
+      "p95_ms": 15737.3,
+      "elapsed_seconds": 35.17,
+      "settings": {
+        "NOTIFICATION_DISPATCH_DB_CONCURRENCY": "1",
+        "NOTIFICATION_DISPATCH_BATCH_SIZE": "512",
+        "NOTIFICATION_INGEST_BATCH_SIZE": "16",
+        "NOTIFICATION_DISPATCH_CUSTOM_PLAN": "true",
+        "NOTIFICATION_COALESCE_DISPATCH_WRITES": "true",
+        "NOTIFICATION_MAX_IDLE_POLL_MS": "1000"
+      },
+      "environment": {
+        "variant": "notification",
+        "catalogSize": 2000,
+        "initialStockPerSku": 1000000,
+        "databaseServers": "separate",
+        "sharedBuffersPerInstance": "32MB",
+        "fsync": true,
+        "synchronous_commit": true,
+        "jvmOptions": "-Xms64m -Xmx256m -XX:TieredStopAtLevel=1",
+        "subscribers": 100,
+        "diagnosticsEnabled": true,
+        "subscriptionPolicy": "even users all SKUs; odd users one SKU",
+        "clientSourceHashes": {
+          "ApiClient.java": "dcf870f04b768c15a733a67e00f7385aec91b8ebb4688c52326febe910b92550",
+          "CatalogItem.java": "8a1aafa055f9e21a3428eb59064de2a31fb0a1b97547f04d3098e80d8ead86b3",
+          "Config.java": "1e5bbf39e6c4e2a856e75d81302ce67955d316112627a4f9c20f04421c34c5a0",
+          "ItemSampler.java": "53499d3aea32e6cc817474b777379418708f87a44eb0f4242d5a8d6125048515",
+          "Json.java": "05e846c03f36d6690e6fc1bb9226daad773b02b494bf86398c2bb7d5b4e81ba6",
+          "Main.java": "e8cd788d420a0f4072226147bce20616b0bd0a6bbf86193aa16175e436f244cd",
+          "Metrics.java": "9f786914be0562a24bd4fa165f8a4c13b47399989d52d8d92f8992d1162fd86c",
+          "ReportWriter.java": "d3b5c20836acedd2e0fa3b97862b7c2967c5c57aa2d1b8b4a2c36d83e08999a0",
+          "StationWorker.java": "074bf7c9394cd81f92dde80a9de2df0cd67798f1630ba069a85c1a5502491386"
+        }
+      }
+    },
+    {
+      "run": "target/notification-test-9636f9c49c",
+      "plan": {
+        "sales": 600,
+        "items_per_sale": 10,
+        "stations": 10,
+        "plan_sha256": "ca1de290bf18f4f45f01418f3cf9b381556c3e22fda68860b3d73d9bf7bd4278",
+        "driver": "fixed-workload-v1 (not the original load-client)"
+      },
+      "notifications": 300250,
+      "tps": 101.86471999616847,
+      "p50_ms": 9491.7,
+      "p95_ms": 15200.51,
+      "elapsed_seconds": 34.45,
+      "settings": {
+        "NOTIFICATION_DISPATCH_DB_CONCURRENCY": "1",
+        "NOTIFICATION_DISPATCH_BATCH_SIZE": "512",
+        "NOTIFICATION_INGEST_BATCH_SIZE": "16",
+        "NOTIFICATION_DISPATCH_CUSTOM_PLAN": "true",
+        "NOTIFICATION_COALESCE_DISPATCH_WRITES": "true",
+        "NOTIFICATION_MAX_IDLE_POLL_MS": "1000"
+      },
+      "environment": {
+        "variant": "notification",
+        "catalogSize": 2000,
+        "initialStockPerSku": 1000000,
+        "databaseServers": "separate",
+        "sharedBuffersPerInstance": "32MB",
+        "fsync": true,
+        "synchronous_commit": true,
+        "jvmOptions": "-Xms64m -Xmx256m -XX:TieredStopAtLevel=1",
+        "subscribers": 100,
+        "diagnosticsEnabled": true,
+        "subscriptionPolicy": "even users all SKUs; odd users one SKU",
+        "clientSourceHashes": {
+          "ApiClient.java": "dcf870f04b768c15a733a67e00f7385aec91b8ebb4688c52326febe910b92550",
+          "CatalogItem.java": "8a1aafa055f9e21a3428eb59064de2a31fb0a1b97547f04d3098e80d8ead86b3",
+          "Config.java": "1e5bbf39e6c4e2a856e75d81302ce67955d316112627a4f9c20f04421c34c5a0",
+          "ItemSampler.java": "53499d3aea32e6cc817474b777379418708f87a44eb0f4242d5a8d6125048515",
+          "Json.java": "05e846c03f36d6690e6fc1bb9226daad773b02b494bf86398c2bb7d5b4e81ba6",
+          "Main.java": "e8cd788d420a0f4072226147bce20616b0bd0a6bbf86193aa16175e436f244cd",
+          "Metrics.java": "9f786914be0562a24bd4fa165f8a4c13b47399989d52d8d92f8992d1162fd86c",
+          "ReportWriter.java": "d3b5c20836acedd2e0fa3b97862b7c2967c5c57aa2d1b8b4a2c36d83e08999a0",
+          "StationWorker.java": "074bf7c9394cd81f92dde80a9de2df0cd67798f1630ba069a85c1a5502491386"
+        }
+      }
+    },
+    {
+      "run": "target/notification-test-6a583a972f",
+      "plan": {
+        "sales": 600,
+        "items_per_sale": 10,
+        "stations": 10,
+        "plan_sha256": "ca1de290bf18f4f45f01418f3cf9b381556c3e22fda68860b3d73d9bf7bd4278",
+        "driver": "fixed-workload-v1 (not the original load-client)"
+      },
+      "notifications": 300250,
+      "tps": 94.48475181469749,
+      "p50_ms": 9510.35,
+      "p95_ms": 15883.89,
+      "elapsed_seconds": 36.32,
+      "settings": {
+        "NOTIFICATION_DISPATCH_DB_CONCURRENCY": "1",
+        "NOTIFICATION_DISPATCH_BATCH_SIZE": "512",
+        "NOTIFICATION_INGEST_BATCH_SIZE": "16",
+        "NOTIFICATION_DISPATCH_CUSTOM_PLAN": "true",
+        "NOTIFICATION_COALESCE_DISPATCH_WRITES": "true",
+        "NOTIFICATION_MAX_IDLE_POLL_MS": "1000"
+      },
+      "environment": {
+        "variant": "notification",
+        "catalogSize": 2000,
+        "initialStockPerSku": 1000000,
+        "databaseServers": "separate",
+        "sharedBuffersPerInstance": "32MB",
+        "fsync": true,
+        "synchronous_commit": true,
+        "jvmOptions": "-Xms64m -Xmx256m -XX:TieredStopAtLevel=1",
+        "subscribers": 100,
+        "diagnosticsEnabled": true,
+        "subscriptionPolicy": "even users all SKUs; odd users one SKU",
+        "clientSourceHashes": {
+          "ApiClient.java": "dcf870f04b768c15a733a67e00f7385aec91b8ebb4688c52326febe910b92550",
+          "CatalogItem.java": "8a1aafa055f9e21a3428eb59064de2a31fb0a1b97547f04d3098e80d8ead86b3",
+          "Config.java": "1e5bbf39e6c4e2a856e75d81302ce67955d316112627a4f9c20f04421c34c5a0",
+          "ItemSampler.java": "53499d3aea32e6cc817474b777379418708f87a44eb0f4242d5a8d6125048515",
+          "Json.java": "05e846c03f36d6690e6fc1bb9226daad773b02b494bf86398c2bb7d5b4e81ba6",
+          "Main.java": "e8cd788d420a0f4072226147bce20616b0bd0a6bbf86193aa16175e436f244cd",
+          "Metrics.java": "9f786914be0562a24bd4fa165f8a4c13b47399989d52d8d92f8992d1162fd86c",
+          "ReportWriter.java": "d3b5c20836acedd2e0fa3b97862b7c2967c5c57aa2d1b8b4a2c36d83e08999a0",
+          "StationWorker.java": "074bf7c9394cd81f92dde80a9de2df0cd67798f1630ba069a85c1a5502491386"
+        }
+      }
+    }
+  ],
+  "note": "Small local sequential experiment, not statistical proof. Fixed-count driver, not the original load-client. Recovery probes included equally. Source hashes remain in each environment.json."
+}

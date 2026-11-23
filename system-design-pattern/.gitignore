@@ -1,0 +1,58 @@
+# 功能：只提交源码、正式报告和验证证据，忽略编译文件、进程文件和日志。
+**/target/
+.DS_Store
+*.token
+*.hprof
+*.mp4
+*.mov
+*.pem
+*.key
+__pycache__/
+*.pyc
+reports/**/*.log
+*.log
+*.log.*
+# 功能：保留每轮原始输出供本地排查，Git 只收录已选定且通过检查的提交文件。
+reports/*
+!reports/submission/
+!reports/optimization/
+# 功能：本地数据库密码不进入版本管理。
+.env
+.env.*
+!.env.example
+
+# Only current evidence is included; older diagnostics remain local.
+reports/submission/*
+!reports/submission/README.md
+!reports/submission/report-default.json
+!reports/submission/report-stress.json
+!reports/submission/correctness-default.json
+!reports/submission/correctness-stress.json
+!reports/submission/database-deployment-default.json
+!reports/submission/database-deployment-stress.json
+!reports/submission/environment.json
+!reports/submission/comparison.json
+!reports/submission/validation.json
+
+# Selected interim candidate evidence; explicitly not a replacement submission.
+reports/optimization/*
+!reports/optimization/README.md
+!reports/optimization/provenance.json
+!reports/optimization/report-default.json
+!reports/optimization/report-stress.json
+!reports/optimization/correctness-default.json
+!reports/optimization/correctness-stress.json
+!reports/optimization/database-deployment-default.json
+!reports/optimization/database-deployment-stress.json
+!reports/optimization/environment.json
+!reports/optimization/comparison.json
+!reports/optimization/validation.json
+!reports/optimization/latest-default/
+reports/optimization/latest-default/*
+!reports/optimization/latest-default/README.md
+!reports/optimization/latest-default/report-default.json
+!reports/optimization/latest-default/correctness.json
+!reports/optimization/latest-default/database-deployment.json
+!reports/optimization/latest-default/environment.json
+
+# Raw timestamped runs, generated classes and service logs remain local.

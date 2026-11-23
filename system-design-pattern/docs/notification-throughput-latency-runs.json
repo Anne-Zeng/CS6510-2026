@@ -1,0 +1,83 @@
+{
+  "runs": [
+    {
+      "run": "notification-test-6c346e80a0",
+      "throughput": 121.88454280655982,
+      "passed": true,
+      "expected_notifications": 3434049,
+      "received_notifications": 3434049,
+      "latency_ms": {
+        "p50": 91043.12,
+        "p95": 308623.39,
+        "p99": 319645.11
+      }
+    },
+    {
+      "run": "notification-test-621ab31d21",
+      "throughput": 118.72459310991275,
+      "passed": true,
+      "expected_notifications": 3362968,
+      "received_notifications": 3362968,
+      "latency_ms": {
+        "p50": 59887.94,
+        "p95": 304221.49,
+        "p99": 334802.36
+      }
+    },
+    {
+      "run": "notification-test-ef78a9f094",
+      "throughput": 114.96994579245255,
+      "passed": true,
+      "expected_notifications": 3265934,
+      "received_notifications": 3265934,
+      "latency_ms": {
+        "p50": 43476.38,
+        "p95": 209850.92,
+        "p99": 255184.21
+      }
+    },
+    {
+      "run": "notification-test-9a9573adea",
+      "throughput": 112.48840314431767,
+      "status": "cancelled_incomplete",
+      "passed": false
+    },
+    {
+      "run": "notification-test-b9c7ee5b4e",
+      "throughput": 113.53997146419482,
+      "status": "cancelled_incomplete",
+      "passed": false
+    },
+    {
+      "run": "notification-test-6a5cd1da1a",
+      "throughput": 107.17658251765457,
+      "passed": true,
+      "expected_notifications": 3033890,
+      "received_notifications": 3033890,
+      "latency_ms": {
+        "p50": 26422.72,
+        "p95": 47345.37,
+        "p99": 50533.14
+      }
+    },
+    {
+      "run": "notification-test-d11cbd5b6d",
+      "status": "build_failed_before_load",
+      "passed": false
+    },
+    {
+      "run": "notification-test-a64b2150b2",
+      "throughput": 199.30258330552675,
+      "passed": true,
+      "expected_notifications": 5656556,
+      "received_notifications": 5656556,
+      "latency_ms": {
+        "p50": 101654.28,
+        "p95": 253126.19,
+        "p99": 257603.41
+      }
+    }
+  ],
+  "fixed_volume_comparison": false,
+  "note": "Same requested teacher workload, different completed-sale/notification volumes; sequential single runs, not statistical proof."
+}
