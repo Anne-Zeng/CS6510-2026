@@ -28,11 +28,12 @@ public class InventoryEvents {
         this.validator = validator;
     }
 
+    //服务启动时注册：
     @EventListener(ApplicationReadyEvent.class)
     public void start() {
         bus.serve("inventory", this::handle);
     }
-
+    //Inventory 的 KafkaBus 消费请求后调用 handle()
     Reply handle(Request request) {
         return Responses.call(() -> switch (request.operation()) {
             case "GET_LOW_STOCK" -> inventory.lowStock(Json.read(request.body(), LowStockQuery.class).threshold());

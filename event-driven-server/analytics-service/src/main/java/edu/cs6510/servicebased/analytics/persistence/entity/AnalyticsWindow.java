@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
-
+//窗口实体
 /** 功能：映射已计算的窗口；windowEnd 唯一，作为分析重启恢复的检查点。 */
 
 @Entity

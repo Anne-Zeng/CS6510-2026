@@ -1,5 +1,5 @@
 package edu.cs6510.servicebased.analytics.contract;
-
+//单个热门商品响应
 /** 功能：热门商品的一行排名：SKU、名称、扫描次数和名次。 */
 
 public record PopularItem(

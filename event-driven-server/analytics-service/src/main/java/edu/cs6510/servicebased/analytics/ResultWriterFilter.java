@@ -4,7 +4,7 @@ import edu.cs6510.servicebased.analytics.PipelineData.RankedWindow;
 import org.springframework.stereotype.Component;
 
 import static edu.cs6510.servicebased.analytics.PipelineData.*;
-
+//将排名交给持久化层保存
 /** 第三段：将计算完成的排名交给独立事务组件保存。 */
 @Component
 public class ResultWriterFilter {

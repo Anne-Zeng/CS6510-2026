@@ -4,6 +4,8 @@
 
 ![Five-service architecture with Kafka and private databases](docs/architecture.svg)
 
+英文代码导读见 [Code Walkthrough](docs/CODE_WALKTHROUGH.md)，包含业务流程图、类之间的调用关系、源码示例和 VS Code 阅读顺序。
+
 完整的拓扑、消息清单和流程图见 [architecture.md](docs/architecture.md)。`event-messaging` 是五个进程使用的共享消息库，封装原生 Apache Kafka Java clients；它没有数据库，也不是第六个微服务。本项目没有使用 Spring Kafka。
 
 ## 服务与数据边界

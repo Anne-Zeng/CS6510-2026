@@ -5,7 +5,7 @@ import edu.cs6510.servicebased.analytics.persistence.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-
+//访问排名记录
 /** 功能：读取指定分析窗口的排名行，按名次升序返回。 */
 
 public interface PopularItemResultRepository

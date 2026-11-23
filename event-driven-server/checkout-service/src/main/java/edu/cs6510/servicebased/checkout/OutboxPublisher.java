@@ -17,10 +17,10 @@ public class OutboxPublisher {
  private long lastWarning;
  public OutboxPublisher(OutboxStore store,AnalyticsClient client) { this.store=store;this.client=client; }
  public int publishOnce() {
-  var events=store.pending();
+  var events=store.pending();//调用 OutboxStore.pending()line19 读取 scan_outbox 中的待发送事件，按 BATCH_SIZE 批量返回
   if(events.isEmpty()) return 0;
-  client.deliver(events);
-  store.acknowledge(events);
+  client.deliver(events);//调用 AnalyticsClient.deliver()line17将扫描事件批次发给 Kafka，等待 broker 确认
+  store.acknowledge(events);//再调用 OutboxStore.acknowledge()line27 将这些事件标记为已发送
   return events.size();
  }
  @Scheduled(fixedDelayString="${checkout.outbox.poll-ms:250}",scheduler="outboxScheduler")

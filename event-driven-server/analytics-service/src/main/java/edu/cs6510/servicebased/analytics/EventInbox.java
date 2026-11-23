@@ -9,7 +9,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.StringJoiner;
-
+//按事件 UUID 去重，将接收事件可靠写入数据库
 /** 功能：Kafka 接收批次在一个本地事务中去重并持久化，提交后才允许确认消费。 */
 @Service
 public class EventInbox {

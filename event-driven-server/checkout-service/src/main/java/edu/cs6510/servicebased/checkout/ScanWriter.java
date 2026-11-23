@@ -68,11 +68,13 @@ public class ScanWriter implements AutoCloseable {
             }
             return single(scan);
         }
+        //ScanWriter.scan() 入队并等待写入结果
         var pending=new Pending(scan,new CompletableFuture<>());
         synchronized(lifecycle) {
             if(!running) throw unavailable("Checkout stopping; retry the same scan request ID");
+            //为这次写入创建任务和结果 Future
             if(!queue.offer(pending)) throw unavailable("Checkout scan queue full; retry the same scan request ID");
-        }
+        }//将任务放进 ScanWriter 自己的内存队列（这个队列是扫描写入队列，不是Outbox，也不是OutboxPublisher），当前调用线程等待数据库处理结果
         try { return pending.reply().get(timeoutMillis,TimeUnit.MILLISECONDS); }
         catch(TimeoutException failure) {
             // Do not remove an accepted request: it may be committing now. A
@@ -86,12 +88,12 @@ public class ScanWriter implements AutoCloseable {
             throw new IllegalStateException(failure.getCause());
         }
     }
-
+//CommandInbox performs the durable database work. It updates the basket and item lines, records an outbox event, and saves the command result atomically.
     private void run() {
         var waiting=new ArrayList<Pending>();
         try {
             while(running) {
-                try {
+                try {//先取一个任务，再收集已经等待的任务，筛选后调用 write(batch) 批量写入数据库, CommandInbox 执行 SQL，真正写入 Outbox
                     if(waiting.isEmpty()) waiting.add(queue.take());
                     queue.drainTo(waiting,CommandInbox.MAX_SCAN_BATCH_SIZE-waiting.size());
                 } catch(InterruptedException stopping) { break; }

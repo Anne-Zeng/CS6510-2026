@@ -218,7 +218,7 @@ public final class GatewayServer implements AutoCloseable {
                 }
                 if ("items".equals(parts[3])) {
                     if (!"POST".equals(method)) return methodNotAllowed();
-                    //扫描商品
+                    //扫描商品GatewayServer maps the HTTP route to the SCAN_ITEM operation and uses the transaction ID as its business key
                     return relay(bus.request("checkout", "SCAN_ITEM", transactionId, body));//HTTP 请求怎样变成 Kafka 命令
                 }
                 if ("complete".equals(parts[3])) {
@@ -239,7 +239,7 @@ public final class GatewayServer implements AutoCloseable {
             return json(502, UPSTREAM_UNAVAILABLE);
         }
     }
-
+    //将业务结果转换成 HTTP 响应converts that reply into an HTTP response
     private static Http.Response relay(Reply reply) {
         if (reply.status() < 200 || reply.status() > 599 || reply.body() == null) {
             throw new IllegalStateException("Invalid service reply");

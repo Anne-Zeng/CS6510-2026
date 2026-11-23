@@ -5,7 +5,7 @@ import edu.cs6510.servicebased.analytics.persistence.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
-
+//访问窗口记录
 /** 功能：查询已保存窗口及最大窗口终点，供幂等保存与恢复使用。 */
 
 public interface AnalyticsWindowRepository

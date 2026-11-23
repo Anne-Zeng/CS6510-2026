@@ -3,7 +3,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-
+//将接收事件推进到有顺序的扫描日志，提供数量和区间读取
 /** 功能：只将本服务 inbox 整理成连续分析序号；接收次序允许跨批次不同于扫描提交次序。 */
 @Repository
 public class ScanEventStore {

@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static edu.cs6510.servicebased.analytics.PipelineData.TOP_LIMIT;
-
+//统计 SKU 次数并排序
 /** 第二段：纯内存计算热门商品，不读取或更新数据库。 */
 @Component
 public class RankerFilter {

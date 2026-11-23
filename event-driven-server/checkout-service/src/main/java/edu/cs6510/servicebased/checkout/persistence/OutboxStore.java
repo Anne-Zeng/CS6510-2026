@@ -23,7 +23,7 @@ public class OutboxStore {
  public void acknowledge(List<Event> events) {
   if(events.isEmpty()) return;
   // Broker ack precedes this update; a lost ack replays the same event IDs.
-  jdbc.update(connection->{
+  jdbc.update(connection->{//event_key=ANY(?)传入刚才这批事件的 UUID,更新提交后，下一次 pending() 查询时，这些记录就不会再匹配WHERE processed=false
    var statement=connection.prepareStatement("UPDATE scan_outbox SET processed=true WHERE event_key=ANY(?) AND processed=false");
    statement.setArray(1,connection.createArrayOf("varchar",events.stream().map(Event::eventId).toArray(String[]::new)));
    return statement;

@@ -72,7 +72,11 @@ public class InventoryService {
     lines.merge(line.sku(),line.quantity(),Math::addExact);
    }
   } catch(ArithmeticException ex) { throw new ResponseStatusException(BAD_REQUEST,"Quantity overflow"); }
-  // 功能：新 ID 交给单一写入线程与同时到达的购物篮合并扣减；等待期间不占许可和数据库连接。
+  // 进入 DebitWriter.debit()功能：新 ID 交给单一写入线程与同时到达的购物篮合并扣减；等待期间不占许可和数据库连接。
+  //handles the inventory debit during checkout completion： For a new operation ID, DebitWriter combines the basket with
+  //  other pending baskets and commits the stock deduction. The caller waits without holding the InventoryService 
+  // concurrency permit or a database connection. After a successful debit, the method returns CONFIRMED.
+  //If the operation ID already exists, the method checks the previous operation instead of deducting stock again. It reports an idempotency conflict
   if(debits.debit(id,lines)) return new Reservation(id,"CONFIRMED");
   // 功能：相同 ID 已存在时只做幂等核对，不再扣库存；行锁与并发释放串行化。
   return write(()->transactions.execute(status->{

@@ -28,7 +28,14 @@ public class InventoryClient {
  /** Saga ID is both the Kafka partition key and Inventory's idempotency key. */
  public String reserve(String attemptId,List<ReceiptLine> lines) {
   var request=new ReserveRequest(lines.stream().map(line->new Item(line.sku(),line.quantity())).toList());
+  //invoke()取得并发许可，
+  // bus.request()发送请求（等待的是 Inventory 扣库存后的业务响应，不是仅仅等待 Kafka 接收消息），InventoryEvents.handle() 收到请求并分派"INVENTORY_RESERVE"
+  // readSuccess()读取结果，validate()验证结果
   var response=invoke(()->bus.request("inventory","INVENTORY_RESERVE",attemptId,Json.write(request)));
+  //检查：正常则返回"CONFIRMED"
+// - 响应是否成功。
+// - 响应中的操作 ID 是否与本次 Saga ID 一致。
+// - 状态是否属于允许值。
   if(response.status()==409) throw new Rejected();
   var outcome=readSuccess(response);
   validate(outcome,attemptId,"RESERVED","CONFIRMED");

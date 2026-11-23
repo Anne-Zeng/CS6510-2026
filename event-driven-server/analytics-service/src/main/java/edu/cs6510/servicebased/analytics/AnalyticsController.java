@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+//保留 HTTP 事件接收入口
 /** 保留原负载客户端的 URL 与 JSON 契约，让代理能够透明转发查询。 */
 @RestController
 @RequestMapping("/analytics")

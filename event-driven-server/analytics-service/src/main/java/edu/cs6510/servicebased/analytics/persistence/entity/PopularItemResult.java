@@ -9,7 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
+//排名实体
 /** 功能：映射某个窗口的排名行；与窗口元数据在同一事务内保存。 */
 
 @Entity

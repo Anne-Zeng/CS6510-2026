@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import static edu.cs6510.servicebased.analytics.PipelineData.SLIDE_INTERVAL;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
-
+//订阅扫描事件，并处理热门商品 Kafka 查询
 /** Kafka scan batches commit to the durable inbox before the bus commits their offsets. */
 @Component
 public class AnalyticsEvents {

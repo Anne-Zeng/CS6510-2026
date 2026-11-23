@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static edu.cs6510.servicebased.analytics.PipelineData.SLIDE_INTERVAL;
-
+//启动和管理三个处理阶段，用有界队列连接它们，处理重试和恢复
 /** 管理本服务内三段分析线程；接收 Kafka 事件后只处理本地持久日志。 */
 @Component
 public class AnalyticsPipeline {

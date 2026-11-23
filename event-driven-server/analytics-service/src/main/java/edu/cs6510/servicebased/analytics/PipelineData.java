@@ -1,7 +1,7 @@
 package edu.cs6510.servicebased.analytics;
 
 import java.util.List;
-
+//定义流水线内部数据及窗口参数
 /** 定义本服务内部流水线传递的不可变数据；这些对象不会发送给其他服务。 */
 public final class PipelineData {
     // 每 500 次扫描生成一个最多包含最近 1,000 次扫描的窗口，并保存前十名。

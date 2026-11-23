@@ -86,6 +86,9 @@ public class CommandInbox {
     @Transactional(propagation=Propagation.NOT_SUPPORTED)
     public Reply scan(String requestId, String transactionId, CatalogItemResponse item) {
         return recoverConcurrentReplay(requestId, () -> {
+            //WITH existing检查 command_results，判断这个命令是否已经处理， locked锁定当前购物篮，并检查状态
+            //recorded AS 在 Checkout 数据库的 scan_outbox 表插入记录
+            //WITH ... AS (...) 块叫 CTE，属于同一条 SQL 语句，不是分别执行的多条 SQL。PostgreSQL 执行时会把 CTE 视为临时表，整个 SQL 语句在一个事务中执行，保证原子性。
             var rows = jdbc.query("""
                     WITH existing AS MATERIALIZED (
                         SELECT status,body FROM command_results WHERE request_id=?

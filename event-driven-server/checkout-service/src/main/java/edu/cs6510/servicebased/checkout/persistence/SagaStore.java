@@ -55,6 +55,7 @@ public class SagaStore {
   var transaction=(TransactionResponse)rows.getFirst()[0];
   var lines=rows.stream().map(row->(ReceiptLine)row[3]).filter(Objects::nonNull).toList();
   return switch(transaction.status()) {
+    //处理“交易已经完成”的情况，begin() 直接重建并返回原收据，不再次扣库存
    case "COMPLETED" -> new Start(null,receipt(transaction,((java.sql.Timestamp)rows.getFirst()[1]).toInstant(),lines));
    case "OPEN" -> {
     if(transaction.itemCount()==0) throw new BusinessException(CONFLICT,"EMPTY_TRANSACTION","Transaction basket is empty");

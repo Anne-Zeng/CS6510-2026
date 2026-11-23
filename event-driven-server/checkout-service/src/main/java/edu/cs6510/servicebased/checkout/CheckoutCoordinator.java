@@ -23,15 +23,16 @@ public class CheckoutCoordinator {
  public Receipt complete(String transactionId) {
   long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(7);
   do {
-   var started=store.begin(transactionId);
+   var started=store.begin(transactionId);//冻结购物篮，记录结账尝试，调用SagaStore.begin()，对新的有效购物篮，它执行一条原子 SQL
    if(started.receipt()!=null) return started.receipt();
    if(started.work()!=null) {
     Receipt receipt;
-    try { receipt=advance(started.work()); }
+    try { receipt=advance(started.work()); }//处理库存预留、确认或释放，调用CheckoutCoordinator.advance()，它根据 Saga 状态调用 InventoryClient.reserve()、confirm() 或 release()
     catch(Exception ex) {
      store.failed(started.work(),ex);
      throw new ResponseStatusException(SERVICE_UNAVAILABLE,"Checkout pending; retry the same transaction",ex);
     }
+
     if(receipt==null) throw new BusinessException(CONFLICT,"INVENTORY_REJECTED","Inventory reservation rejected; basket is OPEN");
     return receipt;
    }
@@ -50,12 +51,14 @@ public class CheckoutCoordinator {
  private Receipt advance(Work work) {
   if(work.state().equals("RESERVING")) {
    String reserved=null;
-   try { reserved=inventory.reserve(work.id(),work.lines()); }
+   //InventoryClient.reserve() 会等待库存业务响应，返回成功状态后，advance() 才执行下一行 store.finish(work)，并返回收据
+   // 如果库存拒绝，advance() 会调用 store.decide(work,"CANCELLING")，然后继续执行下一行 store.finish(work)，并返回 null
+   try { reserved=inventory.reserve(work.id(),work.lines()); }//work.id：Saga ID，reserved这个方法尚未返回时，下面的 if 和 finish() 都不会执行
    catch(InventoryClient.Rejected ex) { work=store.decide(work,"CANCELLING"); }
    if(reserved!=null) {
     // 功能：库存扣减即确认，是本 Saga 唯一的远程关键步骤；之后只剩可重试的本地完成，无需再持久化 COMMITTING。
     if(reserved.equals("RESERVED")) inventory.confirm(work.id());
-    return store.finish(work);
+    return store.finish(work);//store 是 SagaStore。它执行 Checkout 自己的 SQL：
    }
   }
   switch(work.state()) {

@@ -120,9 +120,9 @@ public final class KafkaBus implements MessageBus {
             // Each instance sees replies; only the instance owning the correlation ID completes it.
             startConsumer(replies, prefix + "." + service + ".replies." + UUID.randomUUID(), "latest", records -> {
                 for (var record : records) {
-                    var response = KafkaEnvelope.reply(record);
-                    var future = pending.get(response.id());
-                    if (future != null) future.complete(response.reply());
+                    var response = KafkaEnvelope.reply(record);//从回复中取出 correlation ID
+                    var future = pending.get(response.id());//找到对应 Future
+                    if (future != null) future.complete(response.reply());//用业务结果完成 Future第 80行的 future.get(...) 随之取得结果并返回。
                 }
             }, assigned);
             if (!assigned.await(45, TimeUnit.SECONDS)) throw new BusException("Kafka reply subscription did not become ready");
@@ -157,19 +157,19 @@ public final class KafkaBus implements MessageBus {
     }
 
     @Override public String topic(String suffix) { return prefix + "." + suffix; }
-
+    //创建 correlation ID，并关联 Future
     @Override public Reply request(String target, String operation, String key, String body) {
         if (!running) throw new BusException("Kafka bus is closed");
         long started = performance.start();
         boolean successful = false;
-        String id = UUID.randomUUID().toString();
-        var future = new CompletableFuture<Reply>();
-        pending.put(id, future);
+        String id = UUID.randomUUID().toString();//id = correlation ID，识别本次请求与响应
+        var future = new CompletableFuture<Reply>();//future  = 当前调用者等待的结果
+        pending.put(id, future);//pending = correlation ID 与 future 的映射表，收到响应时用 correlation ID 找到对应的 future 并完成它
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs);
         try {
             var request = new Request(id, operation, key, body, replies);
-            // A business reply proves that the request reached its consumer. Waiting for the send
-            // acknowledgment first only serializes the caller behind a redundant network wait.
+            // Kafka 接收成功，不会直接让请求成功返回 A business reply proves that the request reached its consumer. 
+            // Waiting for the send acknowledgment first only serializes the caller behind a redundant network wait.
             long sent = performance.start();
             producer.send(KafkaEnvelope.request(topic(target + ".requests"), request, headerEnvelopes), (metadata, failure) -> {
                 performance.elapsed(operation, Stage.REQUEST_ACK, sent, failure != null);
@@ -177,7 +177,7 @@ public final class KafkaBus implements MessageBus {
             });
             long remaining = deadline - System.nanoTime();
             if (remaining <= 0) throw new TimeoutException("Kafka business reply timed out");
-            Reply reply = future.get(remaining, TimeUnit.NANOSECONDS);
+            Reply reply = future.get(remaining, TimeUnit.NANOSECONDS);//future.get(...) 随之取得结果并返回
             successful = true;
             return reply;
         } catch (Exception ex) {
@@ -191,7 +191,8 @@ public final class KafkaBus implements MessageBus {
     }
 
     @Override public void publish(String topic, String key, String body) {
-        if (!running) throw new BusException("Kafka bus is closed");
+        if (!running) throw new BusException("Kafka bus is closed");//检查当前通信对象是否已经关闭。关闭后不能再发送消息。
+        //publishAsync异步发送消息，返回一个代表“发送是否完成”的 Future。等待这个 Future 完成，最长等待 timeoutMs 毫秒。
         try { publishAsync(topic, key, body).get(timeoutMs, TimeUnit.MILLISECONDS); }
         catch (Exception ex) {
             if (ex instanceof InterruptedException) Thread.currentThread().interrupt();

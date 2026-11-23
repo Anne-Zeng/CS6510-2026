@@ -32,6 +32,7 @@ public class CheckoutMessages {
   this.bus=bus;this.checkout=checkout;this.validator=validator;this.outbox=outbox;this.inbox=inbox;this.scans=scans;
  }
  @EventListener(ApplicationReadyEvent.class)
+ //receives the Kafka request and selects the matching handler
  public void start() { bus.serve("checkout",this::handle); }//收到发给 Checkout 的请求时使用handle()方法处理
  Reply handle(Request request) {//按操作名分派业务处理
   return switch(request.operation()) {
@@ -45,7 +46,7 @@ public class CheckoutMessages {
  }
  private Reply scan(Request request) {
   try {
-   CatalogItemResponse item;
+   CatalogItemResponse item;//read()：解析 JSON，并验证请求。TransactionService.prepareScan()查询商品并返回
    try { item=checkout.prepareScan(read(request.body(),ScanItemRequest.class)); }
    catch(RuntimeException failure) {
     // The catalog may have changed since the original successful command.
@@ -53,7 +54,7 @@ public class CheckoutMessages {
     var replay=inbox.cached(request.id());
     if(replay!=null) return replay;
     throw failure;
-   }
+   }//ScanWriter.scan() 入队并等待写入结果
    return scans.scan(new PreparedScan(request.id(),request.key(),item));
   } catch(RuntimeException ex) {
    return Responses.call(()-> { throw ex; });

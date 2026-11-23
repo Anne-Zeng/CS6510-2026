@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
+//保存窗口、排名及恢复检查点，读取最新结果
 /** 统一处理排名读写；窗口元数据和商品排名必须在同一个数据库事务中提交。 */
 @Component
 public class AnalyticsWindowStore {

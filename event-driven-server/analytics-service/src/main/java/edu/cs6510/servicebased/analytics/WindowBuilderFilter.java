@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 import static edu.cs6510.servicebased.analytics.PipelineData.*;
-
+//从扫描日志构建窗口
 /** 第一段：批量整理本服务已接收的 inbox，再从连续扫描日志构造精确窗口。 */
 @Component
 public class WindowBuilderFilter {
